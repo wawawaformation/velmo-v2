@@ -1,0 +1,90 @@
+<mxfile host="Electron">
+  <diagram name="Page-1" id="6pFSwpn-lnz2Cx3lBha1">
+    <mxGraphModel dx="912" dy="733" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="NxdSp2C2focEOks1boSV-3" edge="1" parent="1" source="NxdSp2C2focEOks1boSV-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.153;entryDx=0;entryDy=0;entryPerimeter=0;" target="NxdSp2C2focEOks1boSV-2">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="294" y="170" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="NxdSp2C2focEOks1boSV-4" connectable="0" parent="NxdSp2C2focEOks1boSV-3" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="Message" vertex="1">
+          <mxGeometry relative="1" x="-0.175" y="-3" as="geometry">
+            <mxPoint y="-4" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="NxdSp2C2focEOks1boSV-1" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;" value="Actor" vertex="1">
+          <mxGeometry height="60" width="30" x="110" y="140" as="geometry" />
+        </mxCell>
+        <mxCell id="NxdSp2C2focEOks1boSV-6" edge="1" parent="1" source="NxdSp2C2focEOks1boSV-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="NxdSp2C2focEOks1boSV-5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="NxdSp2C2focEOks1boSV-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="IHM" vertex="1">
+          <mxGeometry height="74" width="120" x="294" y="126" as="geometry" />
+        </mxCell>
+        <mxCell id="NxdSp2C2focEOks1boSV-5" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="Fenêtre flottante&lt;div&gt;(30 messages)&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="120" x="294" y="230" as="geometry" />
+        </mxCell>
+        <mxCell id="NxdSp2C2focEOks1boSV-7" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="Petit LLM de classification" vertex="1">
+          <mxGeometry height="60" width="120" x="300" y="330" as="geometry" />
+        </mxCell>
+        <mxCell id="NxdSp2C2focEOks1boSV-8" edge="1" parent="1" source="NxdSp2C2focEOks1boSV-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.442;entryY=0.05;entryDx=0;entryDy=0;entryPerimeter=0;" target="NxdSp2C2focEOks1boSV-7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="NxdSp2C2focEOks1boSV-9" parent="1" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.database;whiteSpace=wrap;fillColor=#ffe6cc;strokeColor=#d79b00;" value="Realtionnel&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;+&lt;/span&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;Vectoriel&lt;/span&gt;" vertex="1">
+          <mxGeometry height="76" width="140" x="490" y="600" as="geometry" />
+        </mxCell>
+        <mxCell id="NxdSp2C2focEOks1boSV-12" edge="1" parent="1" source="NxdSp2C2focEOks1boSV-10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="NxdSp2C2focEOks1boSV-9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="NxdSp2C2focEOks1boSV-13" connectable="0" parent="NxdSp2C2focEOks1boSV-12" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="Sémantique" vertex="1">
+          <mxGeometry relative="1" x="-0.2381" y="-1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="NxdSp2C2focEOks1boSV-16" edge="1" parent="1" source="NxdSp2C2focEOks1boSV-10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="NxdSp2C2focEOks1boSV-15">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="NxdSp2C2focEOks1boSV-18" connectable="0" parent="NxdSp2C2focEOks1boSV-16" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="Épisodique" vertex="1">
+          <mxGeometry relative="1" x="-0.3734" y="-2" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="NxdSp2C2focEOks1boSV-19" edge="1" parent="1" source="NxdSp2C2focEOks1boSV-10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="NxdSp2C2focEOks1boSV-21">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="360" y="710" />
+              <mxPoint x="360" y="710" />
+            </Array>
+            <mxPoint x="290" y="700" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="NxdSp2C2focEOks1boSV-20" connectable="0" parent="NxdSp2C2focEOks1boSV-19" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="Question, etc ..." vertex="1">
+          <mxGeometry relative="1" x="-0.1986" y="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="NxdSp2C2focEOks1boSV-10" parent="1" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.decision;whiteSpace=wrap;" value="" vertex="1">
+          <mxGeometry height="100" width="100" x="314" y="506" as="geometry" />
+        </mxCell>
+        <mxCell id="NxdSp2C2focEOks1boSV-11" edge="1" parent="1" source="NxdSp2C2focEOks1boSV-7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" target="NxdSp2C2focEOks1boSV-10">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="NxdSp2C2focEOks1boSV-14" connectable="0" parent="NxdSp2C2focEOks1boSV-11" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="Quel type de mémoire ?" vertex="1">
+          <mxGeometry relative="1" x="0.0621" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="NxdSp2C2focEOks1boSV-15" parent="1" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.database;whiteSpace=wrap;fillColor=#ffe6cc;strokeColor=#d79b00;" value="SGBDR classique" vertex="1">
+          <mxGeometry height="60" width="120" x="140" y="616" as="geometry" />
+        </mxCell>
+        <mxCell id="NxdSp2C2focEOks1boSV-21" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="Pas de persistance" vertex="1">
+          <mxGeometry height="60" width="120" x="304" y="690" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

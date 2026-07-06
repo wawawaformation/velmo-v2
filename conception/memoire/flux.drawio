@@ -1,0 +1,156 @@
+<mxfile host="Electron">
+  <diagram name="Page-1" id="6pFSwpn-lnz2Cx3lBha1">
+    <mxGraphModel dx="2066" dy="1100" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1300" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="NxdSp2C2focEOks1boSV-3" edge="1" parent="1" source="NxdSp2C2focEOks1boSV-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.153;entryDx=0;entryDy=0;entryPerimeter=0;" target="NxdSp2C2focEOks1boSV-2">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="328" y="170" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="NxdSp2C2focEOks1boSV-4" connectable="0" parent="NxdSp2C2focEOks1boSV-3" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="Message" vertex="1">
+          <mxGeometry relative="1" x="-0.175" y="-3" as="geometry">
+            <mxPoint y="-4" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="NxdSp2C2focEOks1boSV-1" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;" value="Actor" vertex="1">
+          <mxGeometry height="60" width="30" x="144" y="140" as="geometry" />
+        </mxCell>
+        <mxCell id="NxdSp2C2focEOks1boSV-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="IHM" vertex="1">
+          <mxGeometry height="74" width="120" x="328" y="126" as="geometry" />
+        </mxCell>
+        <mxCell id="NTLXUO37HtvHbej4z6rw-4" edge="1" parent="1" source="NxdSp2C2focEOks1boSV-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.25;exitY=1;exitDx=0;exitDy=0;fontSize=10;" target="NTLXUO37HtvHbej4z6rw-7" value="un message à la fois&#xa;(écriture synchrone)">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="NxdSp2C2focEOks1boSV-5" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="Fenêtre flottante&lt;div&gt;(30 messages)&lt;/div&gt;&lt;div&gt;— mémoire court terme —&lt;/div&gt;" vertex="1">
+          <mxGeometry height="70" width="150" x="460" y="255" as="geometry" />
+        </mxCell>
+        <mxCell id="NxdSp2C2focEOks1boSV-6" edge="1" parent="1" source="NxdSp2C2focEOks1boSV-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.75;exitY=1;exitDx=0;exitDy=0;fontSize=10;" target="NxdSp2C2focEOks1boSV-5" value="chaque message">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="NxdSp2C2focEOks1boSV-12" edge="1" parent="1" source="NxdSp2C2focEOks1boSV-10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="sem_dec">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="NxdSp2C2focEOks1boSV-13" connectable="0" parent="NxdSp2C2focEOks1boSV-12" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="Sémantique" vertex="1">
+          <mxGeometry relative="1" x="-0.2381" y="-1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="NxdSp2C2focEOks1boSV-16" edge="1" parent="1" source="NxdSp2C2focEOks1boSV-10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="NxdSp2C2focEOks1boSV-15">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="NxdSp2C2focEOks1boSV-18" connectable="0" parent="NxdSp2C2focEOks1boSV-16" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="Épisodique" vertex="1">
+          <mxGeometry relative="1" x="-0.3734" y="-2" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="NxdSp2C2focEOks1boSV-19" edge="1" parent="1" source="NxdSp2C2focEOks1boSV-10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="NxdSp2C2focEOks1boSV-21">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="394" y="666" />
+              <mxPoint x="394" y="666" />
+            </Array>
+            <mxPoint x="324" y="656" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="NxdSp2C2focEOks1boSV-20" connectable="0" parent="NxdSp2C2focEOks1boSV-19" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="Question, etc ..." vertex="1">
+          <mxGeometry relative="1" x="-0.1986" y="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="NxdSp2C2focEOks1boSV-10" parent="1" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.decision;whiteSpace=wrap;" value="" vertex="1">
+          <mxGeometry height="100" width="100" x="348" y="462" as="geometry" />
+        </mxCell>
+        <mxCell id="NxdSp2C2focEOks1boSV-15" parent="1" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.database;whiteSpace=wrap;fillColor=#ffe6cc;strokeColor=#d79b00;" value="SGBDR classique&lt;div&gt;&lt;br/&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="78" width="120" x="174" y="590" as="geometry" />
+        </mxCell>
+        <mxCell id="NxdSp2C2focEOks1boSV-21" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="Pas de persistance" vertex="1">
+          <mxGeometry height="60" width="120" x="348" y="646" as="geometry" />
+        </mxCell>
+        <mxCell id="sem_dec" parent="1" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.decision;whiteSpace=wrap;fontSize=10;" value="Clé connue&#xa;d&#39;avance ?" vertex="1">
+          <mxGeometry height="90" width="90" x="548" y="467" as="geometry" />
+        </mxCell>
+        <mxCell id="e_user_col" parent="1" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.database;whiteSpace=wrap;fillColor=#ffe6cc;strokeColor=#d79b00;" value="User (colonne)" vertex="1">
+          <mxGeometry height="60" width="140" x="523" y="620" as="geometry" />
+        </mxCell>
+        <mxCell id="e_vectoriel" parent="1" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.database;whiteSpace=wrap;fillColor=#ffe6cc;strokeColor=#d79b00;" value="Vectoriel" vertex="1">
+          <mxGeometry height="60" width="140" x="674" y="620" as="geometry" />
+        </mxCell>
+        <mxCell id="rel_sem_user" edge="1" parent="1" source="sem_dec" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;" target="e_user_col" value="oui">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel_sem_vect" edge="1" parent="1" source="sem_dec" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;" target="e_vectoriel" value="non (imprévisible)">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="NTLXUO37HtvHbej4z6rw-7" parent="1" style="shape=dataStorage;whiteSpace=wrap;html=1;fixedSize=1;" value="Table BrutMemory" vertex="1">
+          <mxGeometry height="80" width="150" x="10" y="260" as="geometry" />
+        </mxCell>
+        <mxCell id="NTLXUO37HtvHbej4z6rw-9" edge="1" parent="1" source="NTLXUO37HtvHbej4z6rw-7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=10;" target="NTLXUO37HtvHbej4z6rw-8" value="lecture périodique&#xa;(par utilisateur)">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="NTLXUO37HtvHbej4z6rw-10" edge="1" parent="1" source="NTLXUO37HtvHbej4z6rw-8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=10;" target="NxdSp2C2focEOks1boSV-10" value="Quel type de mémoire ?">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="NTLXUO37HtvHbej4z6rw-8" parent="1" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;" value="Petit LLM asynchrone&lt;br&gt;classifie + retraite&lt;div&gt;(degré variable selon destination)&lt;/div&gt;" vertex="1">
+          <mxGeometry height="70" width="150" x="313" y="360" as="geometry" />
+        </mxCell>
+        <mxCell id="purge_edge" edge="1" parent="1" source="NTLXUO37HtvHbej4z6rw-8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;strokeColor=#4D4D4D;fontColor=#4D4D4D;fontSize=9;exitX=0;exitY=0.2;exitDx=0;exitDy=0;entryX=1;entryY=0.7;entryDx=0;entryDy=0;" target="NTLXUO37HtvHbej4z6rw-7" value="supprime la ligne&#xa;une fois traitée">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="note_distill_sem" parent="1" style="text;html=1;align=center;verticalAlign=top;fontSize=9;fontStyle=2;fontColor=#4D4D4D;whiteSpace=wrap;" value="distillation forte : valeur nette" vertex="1">
+          <mxGeometry height="20" width="340" x="500" y="686" as="geometry" />
+        </mxCell>
+        <mxCell id="note_light_epis" parent="1" style="text;html=1;align=center;verticalAlign=top;fontSize=9;fontStyle=2;fontColor=#4D4D4D;whiteSpace=wrap;" value="nettoyage léger, vocabulaire préservé&#xa;(recherche LIKE)" vertex="1">
+          <mxGeometry height="30" width="210" x="130" y="674" as="geometry" />
+        </mxCell>
+        <mxCell id="mdl_title" parent="1" style="text;html=1;align=left;verticalAlign=middle;fontSize=14;fontStyle=1;" value="Modèle de données de la mémoire" vertex="1">
+          <mxGeometry height="24" width="500" x="40" y="760" as="geometry" />
+        </mxCell>
+        <mxCell id="mdl_user" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;align=left;spacingLeft=8;fontSize=11;" value="&lt;b&gt;User&lt;/b&gt;&lt;div&gt;user_id (PK)&lt;/div&gt;&lt;div&gt;nom&lt;/div&gt;&lt;div&gt;prénom&lt;/div&gt;&lt;div&gt;— faits fixes (colonnes) —&lt;/div&gt;&lt;div&gt;pointure, statut_compte,&lt;/div&gt;&lt;div&gt;tutoiement, langue, canal_contact…&lt;/div&gt;" vertex="1">
+          <mxGeometry height="150" width="230" x="40" y="800" as="geometry" />
+        </mxCell>
+        <mxCell id="mdl_session" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;align=left;spacingLeft=8;fontSize=11;" value="&lt;b&gt;Session&lt;/b&gt;&lt;div&gt;session_id (PK)&lt;/div&gt;&lt;div&gt;user_id (FK)&lt;/div&gt;&lt;div&gt;date&lt;/div&gt;" vertex="1">
+          <mxGeometry height="90" width="180" x="360" y="800" as="geometry" />
+        </mxCell>
+        <mxCell id="mdl_message" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;align=left;spacingLeft=8;fontSize=11;" value="&lt;b&gt;Message&lt;/b&gt;&lt;div&gt;id (PK)&lt;/div&gt;&lt;div&gt;session_id (FK)&lt;/div&gt;&lt;div&gt;role&lt;/div&gt;&lt;div&gt;contenu&lt;/div&gt;&lt;div&gt;ordre&lt;/div&gt;" vertex="1">
+          <mxGeometry height="120" width="180" x="580" y="785" as="geometry" />
+        </mxCell>
+        <mxCell id="mdl_msgbrut" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;align=left;spacingLeft=8;fontSize=10;" value="&lt;b&gt;MessageBrut&lt;/b&gt;&lt;div&gt;id (PK)&lt;/div&gt;&lt;div&gt;user_id (FK)&lt;/div&gt;&lt;div&gt;contenu (brut)&lt;/div&gt;&lt;div&gt;horodatage&lt;/div&gt;&lt;div&gt;— tampon, supprimé après traitement —&lt;/div&gt;" vertex="1">
+          <mxGeometry height="120" width="220" x="10" y="1030" as="geometry" />
+        </mxCell>
+        <mxCell id="mdl_fait_vec" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;align=left;spacingLeft=8;fontSize=11;" value="&lt;b&gt;FaitSémantique (vectoriel)&lt;/b&gt;&lt;div&gt;id_fait (PK)&lt;/div&gt;&lt;div&gt;user_id (FK)&lt;/div&gt;&lt;div&gt;contenu (distillé)&lt;/div&gt;&lt;div&gt;embedding&lt;/div&gt;" vertex="1">
+          <mxGeometry height="110" width="220" x="260" y="1030" as="geometry" />
+        </mxCell>
+        <mxCell id="mdl_episode" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;align=left;spacingLeft=8;fontSize=11;" value="&lt;b&gt;Épisode&lt;/b&gt;&lt;div&gt;id_episode (PK)&lt;/div&gt;&lt;div&gt;user_id (FK)&lt;/div&gt;&lt;div&gt;contenu (nettoyé léger)&lt;/div&gt;&lt;div&gt;date&lt;/div&gt;" vertex="1">
+          <mxGeometry height="100" width="200" x="548" y="1050" as="geometry" />
+        </mxCell>
+        <mxCell id="mdl_rel_user_session" edge="1" parent="1" source="mdl_user" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;fontSize=10;" target="mdl_session" value="possède 0..N">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="mdl_rel_session_message" edge="1" parent="1" source="mdl_session" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;fontSize=10;" target="mdl_message" value="contient 1..N">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="mdl_rel_user_msgbrut" edge="1" parent="1" source="mdl_user" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;fontSize=10;" target="mdl_msgbrut" value="écrit temporairement 0..N">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="mdl_rel_user_fait" edge="1" parent="1" source="mdl_user" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;fontSize=10;" target="mdl_fait_vec" value="possède 0..N (clé imprévisible)">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="mdl_rel_user_episode" edge="1" parent="1" source="mdl_user" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;fontSize=10;" target="mdl_episode" value="possède 0..N">
+          <mxGeometry relative="1" x="-0.0009" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="648" y="930" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="mdl_legend" parent="1" style="text;html=1;align=left;verticalAlign=top;fontSize=9;fontStyle=2;fontColor=#4D4D4D;whiteSpace=wrap;" value="Légende : gris = pivot / tampon (User porte les faits à clé connue ; MessageBrut est temporaire) · bleu = court terme (RAM) · orange = vectoriel (clé imprévisible, distillé) · vert = épisodique (relationnel, nettoyage léger)" vertex="1">
+          <mxGeometry height="40" width="700" x="30" y="1187" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

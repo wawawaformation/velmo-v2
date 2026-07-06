@@ -26,18 +26,31 @@ class EchoLLM:
         return f"[velmo] J'ai bien reçu : {message}"
 
 
-class AzureLLM:
-    """Adapte le modèle de chat Azure AI Inference à l'interface `LLM`."""
+class LangChainAdapter:
+    """Encapsule ChatAzureOpenAI + LangChain Runnable à l'interface LLM."""
 
-    def __init__(self, model) -> None:
-        self._model = model
+    def __init__(self, llm) -> None:
+        from langchain_core.prompts import PromptTemplate
+
+        self._llm = llm
+        # Template avec variables {system}, {context}, {message}
+        prompt_template = PromptTemplate.from_template(
+            "{system}\n"
+            "{context}"
+            "{message}"
+        )
+        self._chain = prompt_template | self._llm
 
     def invoke(self, system: str, context: str, message: str) -> str:
-        messages = [{"role": "system", "content": system}]
-        if context:
-            messages.append({"role": "system", "content": f"Mémoire:\n{context}"})
-        messages.append({"role": "user", "content": message})
-        return self._model.invoke(messages).content
+        """Appelle la chaîne Runnable avec les variables de prompt."""
+        # Préparer les entrées pour le template
+        context_str = f"Mémoire:\n{context}\n" if context else ""
+        result = self._chain.invoke({
+            "system": system,
+            "context": context_str,
+            "message": message,
+        })
+        return result.content
 
 
 def get_llm() -> LLM:
@@ -47,9 +60,9 @@ def get_llm() -> LLM:
 
     from langchain_azure_ai.chat_models import AzureAIOpenAIApiChatModel
 
-    model = AzureAIOpenAIApiChatModel(
+    llm = AzureAIOpenAIApiChatModel(
         endpoint=os.environ["AZURE_AI_INFERENCE_ENDPOINT"],
         credential=os.environ["AZURE_AI_INFERENCE_API_KEY"],
         model=os.environ.get("AZURE_AI_INFERENCE_MODEL", "Kimi-K2.6"),
     )
-    return AzureLLM(model)
+    return LangChainAdapter(llm)

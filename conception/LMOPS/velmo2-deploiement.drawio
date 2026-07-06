@@ -1,0 +1,97 @@
+<mxfile host="Electron">
+  <diagram name="Déploiement" id="deploiement-velmo2">
+    <mxGraphModel dx="1140" dy="607" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1000" pageHeight="700" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;align=left;verticalAlign=middle;fontSize=15;fontStyle=1;" value="Velmo 2.0 — Diagramme de déploiement" vertex="1">
+          <mxGeometry height="26" width="600" x="30" y="10" as="geometry" />
+        </mxCell>
+        <mxCell id="compose_box" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#6c8ebf;dashed=1;verticalAlign=top;align=left;spacingLeft=10;spacingTop=8;fontStyle=1;fontSize=12;" value="docker-compose.yml — infrastructure locale / staging" vertex="1">
+          <mxGeometry height="290" width="580" x="40" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="agent" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;align=center;" value="🐳 agent&#xa;Velmo 2.0 (Python)" vertex="1">
+          <mxGeometry height="60" width="160" x="260" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="db" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;align=center;" value="🐘 db (pgvector)&#xa;schéma metier — seed.py fourni&#xa;schéma memoire — vide au départ" vertex="1">
+          <mxGeometry height="90" width="260" x="70" y="220" as="geometry" />
+        </mxCell>
+        <mxCell id="chroma" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;align=center;" value="🔵 chromadb&#xa;KB — fournie par le formateur" vertex="1">
+          <mxGeometry height="90" width="230" x="360" y="220" as="geometry" />
+        </mxCell>
+        <mxCell id="e_agent_db" edge="1" parent="1" source="agent" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;" target="db">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_agent_chroma" edge="1" parent="1" source="agent" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;" target="chroma">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ext_box" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#d79b00;dashed=1;verticalAlign=top;align=left;spacingLeft=10;spacingTop=8;fontStyle=1;fontSize=12;" value="Services externes managés (Azure AI Foundry)" vertex="1">
+          <mxGeometry height="290" width="300" x="660" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="llm" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=10;align=center;" value="LLM génération de réponse" vertex="1">
+          <mxGeometry height="50" width="240" x="690" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="phi4" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=10;align=center;" value="Phi-4-mini-instruct&#xa;classification mémoire · vérif. périmètre" vertex="1">
+          <mxGeometry height="50" width="240" x="690" y="160" as="geometry" />
+        </mxCell>
+        <mxCell id="contentsafety" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=10;align=center;" value="Azure AI Content Safety&#xa;+ Prompt Shields + PII redaction" vertex="1">
+          <mxGeometry height="50" width="240" x="690" y="220" as="geometry" />
+        </mxCell>
+        <mxCell id="embed" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=10;align=center;" value="embed-v-4-0&#xa;embeddings (FaitSémantique vectoriel)" vertex="1">
+          <mxGeometry height="50" width="240" x="690" y="280" as="geometry" />
+        </mxCell>
+        <mxCell id="e_agent_llm" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="420" y="114.9655172413793" as="sourcePoint" />
+            <mxPoint x="690" y="110.00000000000011" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_agent_phi4" edge="1" parent="1" source="agent" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;" target="phi4">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="555" y="150" />
+              <mxPoint x="555" y="200" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_agent_cs" edge="1" parent="1" source="agent" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;" target="contentsafety">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="340" y="250" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_agent_embed" edge="1" parent="1" source="agent" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;" target="embed">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="680" y="130" />
+              <mxPoint x="680" y="305" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="langfuse_box" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;align=center;" value="Langfuse Cloud (Hobby) — hors docker-compose" vertex="1">
+          <mxGeometry height="60" width="400" x="150" y="400" as="geometry" />
+        </mxCell>
+        <mxCell id="e_agent_langfuse" edge="1" parent="1" source="agent" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;fontSize=9;" target="langfuse_box" value="traces, coût, latence, scores">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="registry" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;align=center;" value="Docker Registry&#xa;velmo-agent:X.Y.Z (build once, promote everywhere)" vertex="1">
+          <mxGeometry height="60" width="300" x="660" y="400" as="geometry" />
+        </mxCell>
+        <mxCell id="e_agent_registry" edge="1" parent="1" source="agent" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;strokeColor=#4D4D4D;fontColor=#4D4D4D;fontSize=9;endArrow=block;" target="registry" value="image poussée par la CI">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="940" y="110" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="legend" parent="1" style="text;html=1;align=left;verticalAlign=top;fontSize=9;fontStyle=2;fontColor=#4D4D4D;whiteSpace=wrap;" value="Vert = infra locale/staging (docker-compose) · Orange = services managés Azure Foundry · Violet = observabilité (Langfuse) · Gris = registre d&#39;images" vertex="1">
+          <mxGeometry height="24" width="900" x="40" y="490" as="geometry" />
+        </mxCell>
+        <mxCell id="note" parent="1" style="text;html=1;align=left;verticalAlign=top;fontSize=9;fontStyle=2;fontColor=#4D4D4D;whiteSpace=wrap;" value="En prod, seul l&#39;agent change d&#39;environnement (image promue) — les services externes (Azure, Langfuse) restent les mêmes points d&#39;accès, juste une config différente (clés API / project id)." vertex="1">
+          <mxGeometry height="30" width="900" x="40" y="515" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -1,0 +1,27 @@
+Chantier 1 - Mémoire:
+
+L'expert impose les exigences suivantes ; à vous d'en déduire l'architecture mémoire (aucune solution n'est imposée, seulement le résultat attendu) :
+Exigence imposée
+
+R1 - Tenir le fil d'une conversation d'au moins 30 tours sans perdre une information donnée au tout début.
+
+R2 - Se souvenir, d'une session à l'autre (des jours plus tard), des faits et préférences durables d'un même utilisateur (ex. « je suis client pro », « tutoie-moi », n° de contrat).
+
+R3 - Isolation stricte : la mémoire d'un utilisateur n'est jamais accessible à un autre.
+
+R4 - Tenir la fenêtre de contexte : au-delà d'un budget de tokens défini, résumer / sélectionner sans perdre l'information critique.
+
+R5 - Droit à l'oubli (RGPD) : un utilisateur peut demander d'oublier une information (« oublie mon numéro de commande »), avec suppression effective et vérifiable.
+
+R6 - Traçabilité : on doit pouvoir inspecter ce que l'agent a retenu d'un utilisateur.
+Questions pour guider votre réflexion (mémoire):
+
+Quels types de mémoire distinguez-vous (court terme de conversation, long terme persistant, mémoire de travail) ? Lequel répond à quelle exigence (R1–R6) ?
+
+Comment structurez-vous la mémoire long terme : épisodique (que s'est-il passé) vs sémantique (faits durables sur l'utilisateur) ? Quel schéma de données (clé-valeur de préférences, faits typés, embeddings + métadonnées) ?
+
+Comment décidez-vous ce qui mérite d'être retenu durablement vs ce qui reste éphémère ? Qui écrit en mémoire long terme, et quand ?
+
+Comment tenez-vous R4 : résumé glissant, sélection des souvenirs pertinents par recherche, troncature ? Comment évitez-vous de résumer en perdant une info critique ?
+
+Comment implémentez-vous concrètement R5 (suppression) et R3 (isolation par utilisateur) dans votre schéma de stockage ?
