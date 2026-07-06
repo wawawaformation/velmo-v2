@@ -28,6 +28,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.1.1] — 2026-07-06
+
+### Fixed
+- **Docker Compose** : Removed conflicting `image: velmo-v2` line that caused `pull access denied` errors when both `build: .` and an explicit image tag were declared; Compose now uses only the locally built image
+- **Seed script** (`make seed`) : Fixed `ForeignKeyViolation` on `escalations.order_id` caused by unordered SQLAlchemy flush; `sampledata.py` now seeds in two phases — base tables (`customers`, `products`, `variants`, `orders`) with an intermediate `flush()`, then dependent tables (`order_items`, `shipments`, `returns`, `refunds`, `escalations`) with final `commit()`
+- **Chroma connection** (`make chat`) : Fixed `Could not connect to a Chroma server` error; `kb_store.py` now parses `CHROMA_URL` via `urlparse` and configures the client dynamically (`host`, `port`, `ssl`) instead of a hardcoded `host="chroma", port=8000`; added robust fallback to `LocalKB` on connection/import failure
+- **Chroma telemetry warning** : Suppressed noisy non-blocking warning (`Failed to send telemetry event ClientStartEvent: capture() takes 1 positional argument but 3 were given`) caused by a `posthog` signature mismatch; added no-op telemetry implementation (`chroma_telemetry.py`) and disabled anonymized telemetry in the Chroma client config
+
+### Files Changed
+- `docker-compose.yml`
+- `src/velmo/sampledata.py`
+- `src/velmo/kb_store.py`
+- `src/velmo/chroma_telemetry.py` (new)
+
+---
+
 ## [0.1.0] — 2026-07-06
 
 ### Added
