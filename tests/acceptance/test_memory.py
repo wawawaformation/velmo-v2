@@ -2,7 +2,16 @@
 
 from __future__ import annotations
 
+from velmo.agent import Agent
+from velmo.guardrails import GuardrailEngine
 from velmo.memory import MemoryManager
+
+
+class CapturingLLM:
+    """LLM factice qui renvoie tel quel le contexte reçu (pour vérifier qu'il n'est pas vide)."""
+
+    def invoke(self, system: str, context: str, message: str) -> str:
+        return context
 
 
 def test_recall_over_30_turns():
@@ -56,3 +65,21 @@ def test_right_to_be_forgotten():
     removed = mm.forget(user, "adresse")
     assert removed >= 1
     assert "rue des Lilas" not in mm.read(user, "Mon adresse ?").render()
+
+
+def test_agent_injects_memory_context_into_llm_fallback():
+    # Non-régression : Agent.respond() doit transmettre le contexte mémoire au
+    # LLM pour toute question hors routage déterministe (sinon R1 est tenu par
+    # MemoryManager mais invisible pour l'utilisateur final, cf. bug agent.py
+    # où `self.memory.read(...)` était appelé puis son résultat jeté).
+    agent = Agent(
+        llm=CapturingLLM(),
+        memory=MemoryManager(),
+        guardrails=GuardrailEngine(),
+    )
+    user = "acc-agent-context"
+
+    agent.respond(user, "Bonjour, j'ai 50 ans, je suis né le 07/09/1975.")
+    reply = agent.respond(user, "Une question quelconque hors commande.")
+
+    assert "50 ans" in reply
