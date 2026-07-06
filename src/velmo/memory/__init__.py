@@ -7,6 +7,15 @@ Quatre briques (cf. `conception/memoire/choix.md`) :
 - long terme épisodique (relationnel, recherche par mots-clés) : `episodic.py`
 
 Isolation stricte par `user_id` sur toutes les opérations (R3).
+
+Capture vs traitement (R2) : `write()` ne fait que la capture synchrone dans
+`MessageBrut` (aucun appel LLM, latence quasi nulle). Le classement/routage vers
+le long terme (colonne connue, vectoriel ou épisodique) est un job séparé,
+`run_pending_job()`, à déclencher explicitement — un vrai scheduler périodique
+(APScheduler/Celery beat) l'appellerait à intervalle régulier en prod ; en tests
+et en dev, on l'appelle à la demande pour simuler ce passage. Ce découplage
+explicite (pas d'appel caché dans `write()`) reflète fidèlement l'architecture
+« capture synchrone / traitement asynchrone » décrite dans `choix.md`.
 """
 
 from __future__ import annotations
@@ -59,11 +68,21 @@ class MemoryManager:
         return MemoryContext(history=history, facts=known_facts, episodic=vector_hits + episodes)
 
     def write(self, user_id: str, user_message: str, assistant_message: str) -> None:
-        """Met à jour la mémoire à partir d'un échange."""
+        """Met à jour la mémoire à partir d'un échange (capture synchrone uniquement).
+
+        Le classement/routage vers le long terme n'a pas lieu ici : voir `run_pending_job`.
+        """
         short_term.append(user_id, "user", user_message)
         short_term.append(user_id, "assistant", assistant_message)
 
         buffer.capture(self._session, user_id, "user", user_message)
+
+    def run_pending_job(self, user_id: str) -> None:
+        """Déclenche le traitement du tampon en attente pour `user_id`.
+
+        En prod, un scheduler périodique (APScheduler/Celery beat) appellerait ceci
+        à intervalle régulier, par utilisateur. Ici, le déclenchement est explicite.
+        """
         process_pending(self._session, user_id)
 
     def remember_fact(self, user_id: str, key: str, value: str) -> None:

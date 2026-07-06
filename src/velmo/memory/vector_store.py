@@ -90,6 +90,12 @@ class ChromaFactStore:
         docs = result.get("documents", [[]])[0]
         return list(docs)
 
+    def all_facts(self, user_id: str) -> list[tuple[str, str]]:
+        result = self._collection.get(where={"user_id": user_id})
+        docs = result.get("documents", [])
+        metas = result.get("metadatas", [])
+        return [((meta or {}).get("key", ""), doc) for doc, meta in zip(docs, metas)]
+
     def delete_matching(self, user_id: str, target: str) -> int:
         result = self._collection.get(where={"user_id": user_id})
         ids = result.get("ids", [])

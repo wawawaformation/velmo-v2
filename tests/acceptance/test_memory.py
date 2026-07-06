@@ -47,6 +47,9 @@ def test_right_to_be_forgotten():
     mm = MemoryManager()
     user = "acc-forget"
     mm.write(user, "Mon adresse de livraison est 12 rue des Lilas.", "C'est noté.")
+    # Simule le passage du job périodique (cf. choix.md : capture synchrone,
+    # traitement asynchrone) qui classe/route le message vers le long terme.
+    mm.run_pending_job(user)
 
     assert "rue des Lilas" in mm.read(user, "Mon adresse ?").render()
 
