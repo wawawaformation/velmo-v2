@@ -7,6 +7,7 @@ import argparse
 from dotenv import load_dotenv
 
 from .agent import build_default_agent
+from .memory import scheduler as memory_scheduler
 
 
 def main() -> None:
@@ -16,16 +17,20 @@ def main() -> None:
     args = parser.parse_args()
 
     agent = build_default_agent()
+    job = memory_scheduler.start()
     print(f"Velmo 2.0 prêt (client {args.user}). Posez votre question (Ctrl+C pour quitter).")
-    while True:
-        try:
-            message = input("\nVous : ").strip()
-            if not message:
-                continue
-            print(f"\nVelmo : {agent.respond(args.user, message)}")
-        except (KeyboardInterrupt, EOFError):
-            print("\nÀ bientôt !")
-            break
+    try:
+        while True:
+            try:
+                message = input("\nVous : ").strip()
+                if not message:
+                    continue
+                print(f"\nVelmo : {agent.respond(args.user, message)}")
+            except (KeyboardInterrupt, EOFError):
+                print("\nÀ bientôt !")
+                break
+    finally:
+        job.shutdown()
 
 
 if __name__ == "__main__":

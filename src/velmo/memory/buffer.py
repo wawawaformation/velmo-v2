@@ -31,6 +31,12 @@ def pending_for(session, user_id: str) -> list[MessageBrut]:
     )
 
 
+def pending_user_ids(session) -> list[str]:
+    """Liste les `user_id` distincts ayant au moins un message en attente."""
+    rows = session.execute(select(MessageBrut.user_id).distinct()).all()
+    return [r[0] for r in rows]
+
+
 def delete(session, rows: list[MessageBrut]) -> None:
     for row in rows:
         session.delete(row)
