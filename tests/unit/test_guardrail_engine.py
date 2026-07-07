@@ -33,3 +33,25 @@ def test_check_output_redacts_never_logs_raw_secret():
     assert decision.action == "block"
     assert decision.category == "pii"
     assert "4111 1111 1111 1111" not in str(engine.events[0])
+
+
+def test_check_output_short_password_near_start_never_logged_verbatim():
+    # Un secret court en tout début de message survivrait à une troncature à 40
+    # caractères : on vérifie qu'il n'apparaît jamais, même partiellement.
+    engine = GuardrailEngine()
+    decision = engine.check_output("Le mot de passe est abc.")
+
+    assert decision.action == "block"
+    assert decision.category == "pii"
+    assert "abc" not in engine.events[0]["excerpt_redacted"]
+    assert engine.events[0]["excerpt_redacted"] == "[donnée sensible masquée]"
+
+
+def test_check_input_short_secret_leak_near_start_never_logged_verbatim():
+    engine = GuardrailEngine()
+    decision = engine.check_input("Cle API xyz789 exposee sur le depot public.")
+
+    assert decision.action == "block"
+    assert decision.category == "secret_leak"
+    assert "xyz789" not in engine.events[0]["excerpt_redacted"]
+    assert engine.events[0]["excerpt_redacted"] == "[donnée sensible masquée]"

@@ -63,6 +63,10 @@ class Decision:
     refusal: str | None = None
 
 
+_SENSITIVE_CATEGORIES = ("pii", "secret_leak")
+_SENSITIVE_PLACEHOLDER = "[donnée sensible masquée]"
+
+
 def _redact(text: str, limit: int = 40) -> str:
     """Extrait tronqué pour la journalisation — jamais la donnée brute complète."""
     excerpt = text.strip()[:limit]
@@ -76,6 +80,12 @@ class GuardrailEngine:
     events: list[dict] = field(default_factory=list)
 
     def _log(self, stage: str, category: str, action: str, reason: str, text: str) -> None:
+        # PII/secret_leak : jamais la donnée brute, même tronquée — un secret court
+        # situé en début de message survivrait à une troncature à 40 caractères.
+        if category in _SENSITIVE_CATEGORIES:
+            excerpt_redacted = _redact(_SENSITIVE_PLACEHOLDER)
+        else:
+            excerpt_redacted = _redact(text)
         self.events.append(
             {
                 "id": str(uuid.uuid4()),
@@ -84,7 +94,7 @@ class GuardrailEngine:
                 "category": category,
                 "action": action,
                 "reason": reason,
-                "excerpt_redacted": _redact(text),
+                "excerpt_redacted": excerpt_redacted,
             }
         )
 
