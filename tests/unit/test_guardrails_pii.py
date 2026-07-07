@@ -32,3 +32,13 @@ def test_detects_secret_leak():
 
 def test_allows_legitimate_output():
     assert detect_pii("Votre commande O-2024-0101 est au statut prepared.") is None
+
+
+def test_card_regex_does_not_match_ungrouped_reference_numbers():
+    # Regression : une suite de 13 chiffres non groupee (reference client) n'est pas une carte.
+    assert detect_pii("Reference client 1234567890123 pour le suivi.") is None
+
+
+def test_iban_regex_does_not_match_non_country_alnum_codes():
+    # Regression : un code lot alphanumerique ne doit pas etre pris pour un IBAN.
+    assert detect_pii("Le lot AB12 3456 7890 1234 5678 est reserve.") is None
