@@ -46,11 +46,11 @@
         </mxCell>
 
         <!-- Scheduler périodique réel (APScheduler) -->
-        <mxCell id="scheduler_box" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" value="memory/scheduler.py — APScheduler&#xa;BackgroundScheduler, interval (30s par défaut)&#xa;démarré dans cli.py au lancement du process&#xa;→ run_pending_job_all_users() à chaque tick" vertex="1">
-          <mxGeometry height="90" width="280" x="20" y="290" as="geometry" />
+        <mxCell id="scheduler_box" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" value="memory/scheduler.py — APScheduler&#xa;BackgroundScheduler, interval (60s par défaut)&#xa;démarré dans cli.py au lancement du process&#xa;→ run_pending_job_all_users() à chaque tick&#xa;→ mm.close() en fin de tick (libère la connexion)" vertex="1">
+          <mxGeometry height="100" width="280" x="20" y="290" as="geometry" />
         </mxCell>
         <mxCell id="job_trigger" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=9;" value="run_pending_job(user_id) [explicite, ex. tests]&#xa;run_pending_job_all_users() [scheduler, tous users]" vertex="1">
-          <mxGeometry height="50" width="280" x="20" y="390" as="geometry" />
+          <mxGeometry height="50" width="280" x="20" y="400" as="geometry" />
         </mxCell>
         <mxCell id="e_scheduler_jobtrigger" edge="1" parent="1" source="scheduler_box" target="job_trigger" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;" value="tick →">
           <mxGeometry relative="1" as="geometry" />
@@ -66,8 +66,8 @@
         </mxCell>
 
         <!-- Classifier -->
-        <mxCell id="classifier" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="classifier.classify_and_distill(contenu)&#xa;— règles regex déterministes —&#xa;PAS un vrai LLM en v1 (offline, CI sans réseau)" vertex="1">
-          <mxGeometry height="80" width="280" x="640" y="320" as="geometry" />
+        <mxCell id="classifier" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="classifier.classify_and_distill(contenu, llm)&#xa;LLM dédié (Phi-4-mini-instruct) → liste de faits (JSON)&#xa;validation de plausibilité par clé connue&#xa;(rejette les extractions incohérentes, ex. année classée pointure)&#xa;repli règles regex déterministes si LLM absent/échec" vertex="1">
+          <mxGeometry height="100" width="300" x="630" y="310" as="geometry" />
         </mxCell>
         <mxCell id="e_processor_classifier" edge="1" parent="1" source="processor" target="classifier" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;" value="pour chaque ligne">
           <mxGeometry relative="1" as="geometry" />
@@ -219,8 +219,8 @@
         </mxCell>
 
         <!-- Légende écarts vs conception -->
-        <mxCell id="legend" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=left;spacingLeft=8;fontSize=10;fillColor=#fff2cc;strokeColor=#d6b656;" value="&lt;b&gt;Écarts assumés vs conception (choix.md) :&lt;/b&gt;&#xa;• write() fait UNIQUEMENT la capture synchrone (MessageBrut). Le traitement est déclenché par un vrai scheduler périodique (memory/scheduler.py, APScheduler, tick toutes les 30s par défaut), démarré dans cli.py — conforme à choix.md. Les tests appellent run_pending_job(user_id) directement (pas d'attente réelle en suite de tests).&#xa;• Classification par RÈGLES REGEX déterministes (classifier.py), pas un vrai petit LLM — garantit un fonctionnement 100% hors-ligne (CI sans réseau/extras).&#xa;• Store sémantique « vectoriel » a un repli relationnel MemoryFact (recherche par recouvrement de tokens) si Chroma indisponible." vertex="1">
-          <mxGeometry height="140" width="580" x="600" y="1080" as="geometry" />
+        <mxCell id="legend" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=left;spacingLeft=8;fontSize=10;fillColor=#fff2cc;strokeColor=#d6b656;" value="&lt;b&gt;Écarts assumés vs conception (choix.md) :&lt;/b&gt;&#xa;• write() fait UNIQUEMENT la capture synchrone (MessageBrut). Le traitement est déclenché par un vrai scheduler périodique (memory/scheduler.py, APScheduler, tick toutes les 60s par défaut), démarré dans cli.py — conforme à choix.md. Les tests appellent run_pending_job(user_id) directement (pas d'attente réelle en suite de tests).&#xa;• Classification par LLM dédié (Phi-4-mini-instruct, AZURE_AI_CLASSIFIER_MODEL) — extrait plusieurs faits par message (JSON), avec validation de plausibilité par clé connue et repli sur des règles regex déterministes si le LLM est absent ou échoue (garantit un fonctionnement 100% hors-ligne en CI, sans réseau/extras).&#xa;• Store sémantique « vectoriel » a un repli relationnel MemoryFact (recherche par recouvrement de tokens) si Chroma indisponible.&#xa;• Chaque tick ferme sa session (MemoryManager.close()) pour libérer la connexion au pool Postgres — un oubli ici épuisait le pool et bloquait le scheduler après quelques ticks (bug corrigé)." vertex="1">
+          <mxGeometry height="160" width="580" x="600" y="1080" as="geometry" />
         </mxCell>
 
       </root>
