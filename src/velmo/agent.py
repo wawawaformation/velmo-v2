@@ -49,6 +49,15 @@ _FAQ_KEYWORDS = (
     "retractation", "entretien", "garantie", "remboursement sous", "conditions d'échange",
 )
 
+_ORDER_STATUS_FR = {
+    "paid": "payée",
+    "prepared": "préparée",
+    "shipped": "expédiée",
+    "delivered": "livrée",
+    "cancelled": "annulée",
+    "returned": "retournée",
+}
+
 
 class Agent:
     """Assistant de support adossé aux outils métier et à la FAQ."""
@@ -182,7 +191,8 @@ class Agent:
     def _format_order(result: dict) -> str:
         if result.get("error"):
             return "Je ne trouve pas cette commande à votre nom."
-        return f"Votre commande {result['order_id']} est au statut « {result['status']} »."
+        status = _ORDER_STATUS_FR.get(result["status"], result["status"])
+        return f"Votre commande {result['order_id']} est au statut « {status} »."
 
     @staticmethod
     def _format_tracking(result: dict) -> str:

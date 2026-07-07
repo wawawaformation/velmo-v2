@@ -115,6 +115,10 @@ class MemoryManager:
         removed += buffer.delete_matching(self._session, user_id, target)
         return removed
 
+    def close(self) -> None:
+        """Ferme la session DB sous-jacente (libère la connexion du pool)."""
+        self._session.close()
+
     def inspect(self, user_id: str) -> dict:
         """Renvoie l'état mémoire d'un utilisateur (faits + souvenirs épisodiques)."""
         known_facts = semantic.get_known_facts(self._session, user_id)

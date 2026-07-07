@@ -20,7 +20,7 @@ from . import MemoryManager
 logger = logging.getLogger(__name__)
 
 
-def start(*, interval_seconds: int = 30) -> BackgroundScheduler:
+def start(*, interval_seconds: int = 60) -> BackgroundScheduler:
     """Démarre le job périodique en tâche de fond et renvoie le scheduler.
 
     Le scheduler tourne dans un thread du process courant (pas de nouveau
@@ -35,6 +35,8 @@ def start(*, interval_seconds: int = 30) -> BackgroundScheduler:
             mm.run_pending_job_all_users()
         except Exception:
             logger.exception("Échec du traitement mémoire périodique")
+        finally:
+            mm.close()
 
     scheduler.add_job(_tick, "interval", seconds=interval_seconds, id="memory_processing")
     scheduler.start()

@@ -2,12 +2,20 @@ name: quality
 
 on:
   push:
-    branches: [main]
+    branches:
+      - feature/**
+      - dev
+      - main
   pull_request:
 
+concurrency:
+  group: quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  quality:
+  lint-and-unit:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
@@ -20,11 +28,68 @@ jobs:
       - name: Install dependencies
         run: uv sync
 
-      - name: Acceptance suite
-        run: uv run pytest tests/acceptance/ -v
+      # Etage 1: fail fast et gratuit
+      - name: Lint (ruff)
+        run: uv run ruff check .
 
-      # Note globale bloquante : le script d'évaluation calcule la note et
-      # sort en erreur sous le seuil, ce qui rejette la livraison.
-      # Décommenter une fois `python -m velmo.mlops.score` disponible :
-      # - name: Quality gate
-      #   run: uv run python -m velmo.mlops.score --min-score 0.8
+      # Etage 2: tests unitaires/metier locaux
+      - name: Test suite (pytest)
+        run: uv run pytest tests/ -v
+
+  eval-suites:
+    runs-on: ubuntu-latest
+    needs: lint-and-unit
+    if: >-
+      (github.event_name == 'push' && (github.ref_name == 'dev' || github.ref_name == 'main')) ||
+      (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main'))
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        run: uv python install 3.11
+
+      - name: Install dependencies
+        run: uv sync --extra vector --extra llm
+
+      # Etage 3: suites d'evaluation LLM (memory / guardrails / quality)
+      # Activee automatiquement des que le module d'eval est disponible.
+      - name: Quality gate (global score)
+        if: ${{ hashFiles('src/velmo/mlops/score.py') != '' }}
+        env:
+          EVAL_MIN_SCORE: "0.8"
+        run: uv run python -m velmo.mlops.score --min-score "$EVAL_MIN_SCORE"
+
+      - name: Eval not implemented yet
+        if: ${{ hashFiles('src/velmo/mlops/score.py') == '' }}
+        run: 'echo "Skipping score gate: src/velmo/mlops/score.py is not available yet."'
+
+  docker-build:
+    runs-on: ubuntu-latest
+    needs:
+      - lint-and-unit
+      - eval-suites
+    if: ${{ github.event_name == 'push' && github.ref_name == 'dev' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Build-once en staging (dev): image candidate
+      - name: Build Docker image
+        run: docker build -t velmo-agent:${{ github.sha }} .
+
+  promote-prod:
+    runs-on: ubuntu-latest
+    needs:
+      - lint-and-unit
+      - eval-suites
+    if: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
+
+    steps:
+      - name: Promotion gate reached
+        run: |
+          echo "Quality checks passed on main."
+          echo "Use environment approval + deployment workflow for final prod promotion."

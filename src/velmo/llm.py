@@ -66,3 +66,18 @@ def get_llm() -> LLM:
         model=os.environ.get("AZURE_AI_INFERENCE_MODEL", "Kimi-K2.6"),
     )
     return LangChainAdapter(llm)
+
+
+def get_classifier_llm() -> LLM:
+    """Construit le client Azure du classifier mémoire (modèle dédié), sinon `EchoLLM`."""
+    if not os.getenv("AZURE_AI_INFERENCE_ENDPOINT") or not os.getenv("AZURE_AI_CLASSIFIER_MODEL"):
+        return EchoLLM()
+
+    from langchain_azure_ai.chat_models import AzureAIOpenAIApiChatModel
+
+    llm = AzureAIOpenAIApiChatModel(
+        endpoint=os.environ["AZURE_AI_INFERENCE_ENDPOINT"],
+        credential=os.environ["AZURE_AI_INFERENCE_API_KEY"],
+        model=os.environ["AZURE_AI_CLASSIFIER_MODEL"],
+    )
+    return LangChainAdapter(llm)

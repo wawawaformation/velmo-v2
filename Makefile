@@ -16,7 +16,7 @@ seed:
 	uv run python scripts/seed.py
 
 seed-kb:
-	uv run python scripts/seed_kb.py
+	CHROMA_HOST=localhost CHROMA_PORT=8001 uv run python scripts/seed_kb.py
 
 chat:
 	uv run python -m velmo.cli

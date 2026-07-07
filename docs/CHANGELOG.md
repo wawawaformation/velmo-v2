@@ -1,67 +1,81 @@
 # Changelog
 
-All notable changes to Velmo 2.0 are documented here.
+Toutes les modifications notables de Velmo 2.0 sont documentées ici.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+Le format s'inspire de [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Planned (Chantiers)
-- **Chantier 1** : Mémoire épisodique (R1–R6 conformance, Chroma + PostgreSQL integration)
-- **Chantier 2** : Middleware guardrails (LangFuse tracing, guardrails-ai integration)
-- **Chantier 3** : MLOps (quality gates, regression detection, CI scoring)
+### Corrections
+
+- **Statut de commande en français** : `_format_order` (agent.py) traduit désormais le statut technique (`shipped`, `delivered`, etc.) en français (« expédiée », « livrée », etc.) via un mapping `_ORDER_STATUS_FR`, au lieu d'afficher la valeur brute de l'enum `OrderStatus`
+- **Incompatibilité client/serveur Chroma** : `docker-compose.yml` utilisait `chromadb/chroma:latest` (serveur en v1.4.4), incompatible avec le client Python figé sur `chromadb>=0.5,<0.6` (`pyproject.toml`), causant un `KeyError: '_type'` lors de la création de la collection `velmo_faq` ; image serveur épinglée sur `chromadb/chroma:0.5.23`
+- **`make seed-kb` depuis l'hôte** : le script `scripts/seed_kb.py` se connectait par défaut à `chroma:8000` (nom de service Docker, résoluble uniquement depuis le réseau Compose) ; `make seed-kb` fixe désormais `CHROMA_HOST=localhost CHROMA_PORT=8001` pour fonctionner depuis la machine hôte, cohérent avec `CHROMA_URL` dans `.env.example`
+
+### Prévu (Chantiers)
+
+- **Chantier 1** : Mémoire épisodique (conformité R1–R6, intégration Chroma + PostgreSQL)
+- **Chantier 2** : Middleware garde-fous (traçage LangFuse, intégration guardrails-ai)
+- **Chantier 3** : MLOps (seuils qualité, détection de régression, scoring CI)
 
 ---
 
 ## [0.2.0] — 2026-07-06
 
-### Changed
-- **LLM Architecture** : Replaced `AzureLLM` + `AzureAIOpenAIApiChatModel` with `LangChainAdapter` wrapping `AzureAIOpenAIApiChatModel` in a LangChain Runnable chain
-- **PromptTemplate** : Introduced `langchain_core.prompts.PromptTemplate` for structured prompt composition (`{system}`, `{context}`, `{message}`)
-- **Backward Compatibility** : Maintained Protocol `LLM` interface; `agent.py` and guardrails/memory layers unchanged
+### Modifié
 
-### Technical Details
-- LangChain Runnable chain ready for future middleware integration (LangFuse, guardrails-ai)
-- EchoLLM fallback verified; business acceptance tests passing
-- Import strategy: lazy import of `langchain_azure_ai` to avoid SDK dependency in offline mode
+- **Architecture LLM** : Remplacement de `AzureLLM` + `AzureAIOpenAIApiChatModel` par `LangChainAdapter` encapsulant `AzureAIOpenAIApiChatModel` dans une chaîne LangChain Runnable
+- **PromptTemplate** : Introduction de `langchain_core.prompts.PromptTemplate` pour la composition structurée des prompts (`{system}`, `{context}`, `{message}`)
+- **Compatibilité ascendante** : Interface `LLM` (Protocol) conservée ; `agent.py` et les couches garde-fous/mémoire inchangés
+
+### Détails techniques
+
+- Chaîne LangChain Runnable prête pour une future intégration de middleware (LangFuse, guardrails-ai)
+- Fallback EchoLLM vérifié ; tests d'acceptation métier passants
+- Stratégie d'import : import différé (lazy) de `langchain_azure_ai` pour éviter la dépendance au SDK en mode hors ligne
 
 ---
 
 ## [0.1.1] — 2026-07-06
 
-### Fixed
-- **Docker Compose** : Removed conflicting `image: velmo-v2` line that caused `pull access denied` errors when both `build: .` and an explicit image tag were declared; Compose now uses only the locally built image
-- **Seed script** (`make seed`) : Fixed `ForeignKeyViolation` on `escalations.order_id` caused by unordered SQLAlchemy flush; `sampledata.py` now seeds in two phases — base tables (`customers`, `products`, `variants`, `orders`) with an intermediate `flush()`, then dependent tables (`order_items`, `shipments`, `returns`, `refunds`, `escalations`) with final `commit()`
-- **Chroma connection** (`make chat`) : Fixed `Could not connect to a Chroma server` error; `kb_store.py` now parses `CHROMA_URL` via `urlparse` and configures the client dynamically (`host`, `port`, `ssl`) instead of a hardcoded `host="chroma", port=8000`; added robust fallback to `LocalKB` on connection/import failure
-- **Chroma telemetry warning** : Suppressed noisy non-blocking warning (`Failed to send telemetry event ClientStartEvent: capture() takes 1 positional argument but 3 were given`) caused by a `posthog` signature mismatch; added no-op telemetry implementation (`chroma_telemetry.py`) and disabled anonymized telemetry in the Chroma client config
+### Corrigé
 
-### Files Changed
+- **Docker Compose** : Suppression de la ligne `image: velmo-v2` en conflit, qui provoquait des erreurs `pull access denied` lorsque `build: .` et un tag d'image explicite étaient tous deux déclarés ; Compose utilise désormais uniquement l'image construite localement
+- **Script de seed** (`make seed`) : Correction d'une `ForeignKeyViolation` sur `escalations.order_id` causée par un flush SQLAlchemy non ordonné ; `sampledata.py` initialise désormais les données en deux phases — tables de base (`customers`, `products`, `variants`, `orders`) avec un `flush()` intermédiaire, puis tables dépendantes (`order_items`, `shipments`, `returns`, `refunds`, `escalations`) avec `commit()` final
+- **Connexion Chroma** (`make chat`) : Correction de l'erreur `Could not connect to a Chroma server` ; `kb_store.py` parse désormais `CHROMA_URL` via `urlparse` et configure le client dynamiquement (`host`, `port`, `ssl`) au lieu d'un `host="chroma", port=8000` codé en dur ; ajout d'un repli robuste vers `LocalKB` en cas d'échec de connexion/import
+- **Avertissement de télémétrie Chroma** : Suppression d'un avertissement bruyant non bloquant (`Failed to send telemetry event ClientStartEvent: capture() takes 1 positional argument but 3 were given`) causé par une incompatibilité de signature `posthog` ; ajout d'une implémentation no-op de télémétrie (`chroma_telemetry.py`) et désactivation de la télémétrie anonymisée dans la configuration du client Chroma
+
+### Fichiers modifiés
+
 - `docker-compose.yml`
 - `src/velmo/sampledata.py`
 - `src/velmo/kb_store.py`
-- `src/velmo/chroma_telemetry.py` (new)
+- `src/velmo/chroma_telemetry.py` (nouveau)
 
 ---
 
 ## [0.1.0] — 2026-07-06
 
-### Added
-- **Project Scaffolding** : Velmo 2.0 boutique support agent (football shirts collector)
-- **Database Layer** : SQLAlchemy models (Order, Customer, Product, Return, Refund, ShipmentTracking)
-- **Tools** : Deterministic routing for order queries, modifications (size, address, cancellation), returns, refunds, stock checks, shipment tracking, KB search
-- **Guardrails Engine** : Input/output gates (stub; blocking rules to be implemented in Chantier 2)
-- **Memory Manager** : Conversation history and episodic memory (stub; Chroma + PostgreSQL to be integrated in Chantier 1)
-- **LLM Integration** : Azure AI Inference (`AzureLLM` with `AzureAIOpenAIApiChatModel`), Kimi-K2.6 model
-- **Test Suite** : Acceptance tests for business logic (7/7 passing), guardrails/memory/MLOps stubs
-- **CI/CD** : GitHub Actions quality gate (placeholder; scoring to be implemented in Chantier 3)
-- **Documentation** : `reco_expert.md` (expert recommendations), CLAUDE.md (project charter)
+### Ajouté
+
+- **Scaffolding du projet** : Agent de support boutique Velmo 2.0 (maillots de football collector)
+- **Couche base de données** : Modèles SQLAlchemy (Order, Customer, Product, Return, Refund, ShipmentTracking)
+- **Outils** : Routage déterministe pour les requêtes de commande, modifications (taille, adresse, annulation), retours, remboursements, vérification de stock, suivi d'expédition, recherche KB
+- **Moteur de garde-fous** : Portes d'entrée/sortie (stub ; règles de blocage à implémenter au Chantier 2)
+- **Gestionnaire de mémoire** : Historique de conversation et mémoire épisodique (stub ; intégration Chroma + PostgreSQL au Chantier 1)
+- **Intégration LLM** : Azure AI Inference (`AzureLLM` avec `AzureAIOpenAIApiChatModel`), modèle Kimi-K2.6
+- **Suite de tests** : Tests d'acceptation pour la logique métier (7/7 passants), stubs garde-fous/mémoire/MLOps
+- **CI/CD** : Quality gate GitHub Actions (placeholder ; scoring à implémenter au Chantier 3)
+- **Documentation** : `reco_expert.md` (recommandations expertes), CLAUDE.md (charte du projet)
 
 ### Stack
-- **Language** : Python 3.11+ with `uv` package manager
-- **Database** : PostgreSQL (SQLAlchemy ORM)
-- **LLM** : Azure AI Inference + Kimi-K2.6
-- **Memory** : Chroma (vector search) + PostgreSQL (state)
-- **Testing** : pytest with langsmith integration
-- **Linting** : ruff
 
+- **Langage** : Python 3.11+ avec le gestionnaire de paquets `uv`
+- **Base de données** : PostgreSQL (ORM SQLAlchemy)
+- **LLM** : Azure AI Inference + Kimi-K2.6
+- **Mémoire** : Chroma (recherche vectorielle) + PostgreSQL (état)
+- **Tests** : pytest avec intégration langsmith
+- **Linting** : ruff
+</content>
+</invoke>
