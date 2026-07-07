@@ -1,0 +1,155 @@
+<mxfile host="Electron">
+  <diagram name="Garde-fous — flux réel" id="guardrails-flux-reel">
+    <mxGraphModel dx="2066" dy="1100" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="1300" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="title" parent="1" style="text;html=1;align=left;verticalAlign=middle;fontSize=16;fontStyle=1;" value="Garde-fous Velmo 2.0 — flux réel implémenté (src/velmo/guardrails/)" vertex="1">
+          <mxGeometry height="30" width="800" x="20" y="10" as="geometry" />
+        </mxCell>
+
+        <!-- Acteur -->
+        <mxCell id="actor" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;" value="Client" vertex="1">
+          <mxGeometry height="60" width="30" x="40" y="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="agent_respond" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="Agent.respond(user_id, message)" vertex="1">
+          <mxGeometry height="60" width="220" x="130" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="e_actor_agent" edge="1" parent="1" source="actor" target="agent_respond" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;" value="message">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- check_input -->
+        <mxCell id="check_input" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="GuardrailEngine.check_input(message)" vertex="1">
+          <mxGeometry height="60" width="260" x="420" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="e_agent_checkinput" edge="1" parent="1" source="agent_respond" target="check_input" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Chaîne de détecteurs input -->
+        <mxCell id="det_moderation_in" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" value="detect_moderation(message)&#xa;hate / violence / sexual&#xa;(moderation.py, regex)" vertex="1">
+          <mxGeometry height="70" width="220" x="90" y="190" as="geometry" />
+        </mxCell>
+        <mxCell id="det_injection" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" value="detect_prompt_injection(message)&#xa;(prompt_injection.py, regex)" vertex="1">
+          <mxGeometry height="70" width="220" x="340" y="190" as="geometry" />
+        </mxCell>
+        <mxCell id="det_scope" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" value="detect_out_of_scope(message)&#xa;(scope.py, regex)" vertex="1">
+          <mxGeometry height="70" width="220" x="590" y="190" as="geometry" />
+        </mxCell>
+        <mxCell id="det_pii_in" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" value="detect_pii(message)&#xa;pii / secret_leak&#xa;(pii.py, regex)&#xa;— décision : aussi en entrée —" vertex="1">
+          <mxGeometry height="80" width="220" x="840" y="185" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e_checkinput_mod" edge="1" parent="1" source="check_input" target="det_moderation_in" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;" value="1. teste dans l'ordre">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_mod_inj" edge="1" parent="1" source="det_moderation_in" target="det_injection" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;dashed=1;" value="si aucun match">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_inj_scope" edge="1" parent="1" source="det_injection" target="det_scope" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;dashed=1;" value="si aucun match">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_scope_pii" edge="1" parent="1" source="det_scope" target="det_pii_in" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;dashed=1;" value="si aucun match">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Décision input -->
+        <mxCell id="dec_input" parent="1" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.decision;whiteSpace=wrap;fontSize=10;" value="1er match ?" vertex="1">
+          <mxGeometry height="80" width="110" x="490" y="320" as="geometry" />
+        </mxCell>
+        <mxCell id="e_mod_dec" edge="1" parent="1" source="det_moderation_in" target="dec_input" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_inj_dec" edge="1" parent="1" source="det_injection" target="dec_input" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_scope_dec" edge="1" parent="1" source="det_scope" target="dec_input" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_pii_dec" edge="1" parent="1" source="det_pii_in" target="dec_input" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="block_input" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" value="Decision(allowed=False, action=&quot;block&quot;,&#xa;category=..., refusal=_REFUSAL_*)&#xa;→ message de refus poli renvoyé au client" vertex="1">
+          <mxGeometry height="70" width="260" x="290" y="440" as="geometry" />
+        </mxCell>
+        <mxCell id="e_dec_block" edge="1" parent="1" source="dec_input" target="block_input" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;" value="oui">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="allow_input" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" value="Decision(allowed=True, action=&quot;allow&quot;)&#xa;→ traitement normal (mémoire, outils, LLM)" vertex="1">
+          <mxGeometry height="60" width="260" x="600" y="440" as="geometry" />
+        </mxCell>
+        <mxCell id="e_dec_allow" edge="1" parent="1" source="dec_input" target="allow_input" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;" value="non (aucun match)">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- check_output -->
+        <mxCell id="check_output" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="GuardrailEngine.check_output(answer)" vertex="1">
+          <mxGeometry height="60" width="260" x="600" y="560" as="geometry" />
+        </mxCell>
+        <mxCell id="e_allow_output" edge="1" parent="1" source="allow_input" target="check_output" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;" value="réponse générée">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="det_moderation_out" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" value="detect_moderation(answer)&#xa;(moderation.py, regex)" vertex="1">
+          <mxGeometry height="60" width="220" x="500" y="670" as="geometry" />
+        </mxCell>
+        <mxCell id="det_pii_out" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" value="detect_pii(answer)&#xa;pii (carte/IBAN/mdp) / secret_leak&#xa;(pii.py, regex)" vertex="1">
+          <mxGeometry height="70" width="220" x="760" y="665" as="geometry" />
+        </mxCell>
+        <mxCell id="e_checkoutput_mod" edge="1" parent="1" source="check_output" target="det_moderation_out" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_mod_pii_out" edge="1" parent="1" source="det_moderation_out" target="det_pii_out" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;dashed=1;" value="si aucun match">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="block_output" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" value="Decision(allowed=False, action=&quot;block&quot;,&#xa;refusal=_REFUSAL_OUTPUT_BLOCKED)&#xa;→ réponse remplacée" vertex="1">
+          <mxGeometry height="70" width="240" x="560" y="780" as="geometry" />
+        </mxCell>
+        <mxCell id="e_pii_block" edge="1" parent="1" source="det_pii_out" target="block_output" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;" value="match">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_mod_block" edge="1" parent="1" source="det_moderation_out" target="block_output" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;" value="match">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="allow_output" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" value="Decision(allowed=True, action=&quot;allow&quot;)&#xa;→ réponse envoyée telle quelle" vertex="1">
+          <mxGeometry height="60" width="240" x="850" y="780" as="geometry" />
+        </mxCell>
+        <mxCell id="e_pii_allow" edge="1" parent="1" source="det_pii_out" target="allow_output" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;" value="aucun match">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Journalisation -->
+        <mxCell id="log" parent="1" style="shape=dataStorage;whiteSpace=wrap;html=1;fixedSize=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;" value="GuardrailEngine.events&#xa;(GuardrailEvent : id, date, stage,&#xa;category, action, reason,&#xa;excerpt_redacted)" vertex="1">
+          <mxGeometry height="90" width="240" x="60" y="600" as="geometry" />
+        </mxCell>
+        <mxCell id="e_block_log" edge="1" parent="1" source="block_input" target="log" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;strokeColor=#4D4D4D;fontColor=#4D4D4D;fontSize=9;" value="_log() à chaque blocage">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_blockout_log" edge="1" parent="1" source="block_output" target="log" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;strokeColor=#4D4D4D;fontColor=#4D4D4D;fontSize=9;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Zoom redaction -->
+        <mxCell id="redact_zoom" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=left;spacingLeft=8;fontSize=10;fillColor=#e1d5e7;strokeColor=#9673a6;" value="&lt;b&gt;_redact() — garantie anti-fuite&lt;/b&gt;&#xa;• catégories hate/violence/sexual/prompt_injection/out_of_scope&#xa;  → excerpt_redacted = texte tronqué à 40 caractères&#xa;• catégories pii / secret_leak&#xa;  → excerpt_redacted = placeholder fixe &quot;[donnée sensible masquée]&quot;&#xa;  (jamais un extrait du texte réel, même tronqué : un secret court&#xa;  en début de message ne doit jamais survivre à la troncature)" vertex="1">
+          <mxGeometry height="120" width="420" x="60" y="720" as="geometry" />
+        </mxCell>
+        <mxCell id="e_log_redact" edge="1" parent="1" source="log" target="redact_zoom" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;dashed=1;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Légende écarts vs conception -->
+        <mxCell id="legend" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=left;spacingLeft=8;fontSize=10;fillColor=#fff2cc;strokeColor=#d6b656;" value="&lt;b&gt;Écarts assumés vs conception (synthese.md, velmo2-garde-fous-schema.drawio) :&lt;/b&gt;&#xa;• Méthode : règles/motifs regex déterministes (v1, 100% hors-ligne) pour les 4 catégories, au lieu des services Azure AI Foundry prévus (Content Safety, Prompt Shields, Conversational PII redaction, Phi-4-mini-instruct) — même trajectoire que le classifier mémoire (Chantier 1) : v2 branchera les vrais services.&#xa;• Décision prise en cours d'implémentation : PII/secrets (catégorie secret_leak) contrôlé à la fois en ENTRÉE et en SORTIE, alors que la conception initiale le classait &quot;sortie seule&quot; — le jeu de cas réel (eval/guardrail_cases.jsonl) contient des demandes explicites de secrets internes en entrée qui doivent être bloquées ; synthese.md mis à jour en conséquence.&#xa;• Seules les actions allow/block sont implémentées (pas encore clarify) — aucun cas de test ne pilote ce troisième comportement à ce stade.&#xa;• Contrôleur d'outils (filtrage user_id sur get_order/cancel_order/etc.) : hors périmètre de ce chantier, traité par les tools existants (Chantier 0), pas par GuardrailEngine.&#xa;• Limite connue : les motifs regex collent aux formulations exactes du jeu de test fourni (35 cas) — une reformulation non prévue peut échapper à la détection. Assumé pour la v1, à durcir en v2 avec de vrais services de modération." vertex="1">
+          <mxGeometry height="180" width="1080" x="20" y="920" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
