@@ -12,7 +12,7 @@
 |---|---|---|
 | Haine / violence / sexuel | **Les deux** | le client peut insulter (entrée) *et* le LLM peut halluciner un contenu problématique (sortie) |
 | Injection de prompt | **Entrée seule** | doit être arrêtée avant que le LLM ne lise la requête |
-| PII / secrets internes | **Sortie seule** | le risque naît dans la génération, pas dans la question posée |
+| PII / secrets internes | **Entrée (secret_leak) + Sortie** | une demande explicite de secrets internes (clé API, mot de passe serveur) est aussi un risque en entrée, distinct du risque de fuite en génération — les deux sont couverts par `detect_pii` (catégories `secret_leak` en entrée et sortie, `pii` structurel type carte/IBAN en sortie) |
 | Données d'un autre client | **Outils** (ni entrée ni sortie au sens strict) | question d'autorisation sur l'action, pas de filtrage de texte |
 | Hors périmètre (médical/juridique) | **Les deux** | détectable dans la demande, mais le LLM peut aussi y dériver spontanément en sortie |
 
@@ -47,7 +47,7 @@ Velmo 2.0 doit traiter automatiquement les demandes simples de support, tout en 
 | Contenu sexuel / NSFW | Entrée + Sortie | Classifieur de modération | Bloquer, refus poli, journaliser |
 | ② Injection de prompt | Entrée | Règles (motifs) + classifieur | Neutraliser, ne jamais obéir, journaliser |
 | ③ Hors périmètre (médical, juridique) | Sortie (et entrée si détectable) | Vérification de périmètre (LLM léger) | Refuser poliment, rediriger, journaliser |
-| ④ PII / secrets internes | Sortie | Azure Language — Conversational PII redaction | Rédiger automatiquement, journaliser (extrait non recopié) |
+| ④ PII / secrets internes | Entrée + Sortie | Azure Language — Conversational PII redaction | Rédiger automatiquement, journaliser (extrait non recopié) |
 | Données d'un autre client | Outils + Sortie | Contrôle applicatif (`user_id`) | Bloquer l'accès, journaliser |
 
 ---

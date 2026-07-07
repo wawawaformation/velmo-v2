@@ -45,6 +45,11 @@ _REFUSAL_OUTPUT_BLOCKED = (
     "Je ne peux pas afficher cette information pour des raisons de "
     "confidentialité. Reformulez votre demande si besoin."
 )
+_REFUSAL_SECRET_INPUT = (
+    "Je ne peux pas partager d'informations internes ou traiter des données "
+    "sensibles de ce type. Je reste à votre disposition pour vos commandes, "
+    "livraisons, retours et la FAQ Velmo."
+)
 
 
 @dataclass
@@ -112,7 +117,7 @@ class GuardrailEngine:
             self._log("input", pii_category, "block", "donnée sensible détectée", message)
             return Decision(
                 allowed=False, action="block", category=pii_category,
-                reason="donnée sensible détectée", refusal=_REFUSAL_MODERATION,
+                reason="donnée sensible détectée", refusal=_REFUSAL_SECRET_INPUT,
             )
 
         return Decision(allowed=True, action="allow")
