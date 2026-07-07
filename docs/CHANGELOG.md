@@ -7,6 +7,10 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Ajouté
+
+- **Garde-fous (Chantier 2)** : Implémentation complète des règles déterministes (v1) pour bloquer le contenu nuisible en entrée (haine/violence/sexuel, injection de prompt, hors périmètre) et en sortie (mêmes catégories + PII/secrets). Journalisation structurée via `GuardrailEvent` avec extraits tronqués (jamais la donnée brute). Note : la détection `secret_leak` (PII/secrets) s'applique à la fois à l'entrée et à la sortie, décision de conception documentée dans `conception/garde-fous/synthese.md`.
+
 ### Corrections
 
 - **Statut de commande en français** : `_format_order` (agent.py) traduit désormais le statut technique (`shipped`, `delivered`, etc.) en français (« expédiée », « livrée », etc.) via un mapping `_ORDER_STATUS_FR`, au lieu d'afficher la valeur brute de l'enum `OrderStatus`
