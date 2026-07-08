@@ -51,8 +51,7 @@ class MemoryContext:
 class MemoryManager:
     """Orchestre la mémoire court terme et long terme, isolée par utilisateur."""
 
-    def __init__(self, *, token_budget: int = 2000) -> None:
-        self.token_budget = token_budget
+    def __init__(self) -> None:
         self._session = storage.new_session()
 
     def read(self, user_id: str, message: str) -> MemoryContext:

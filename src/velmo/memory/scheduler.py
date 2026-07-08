@@ -17,10 +17,12 @@ from apscheduler.schedulers.background import BackgroundScheduler
 
 from . import MemoryManager
 
+INTERVAL_SECONDS_DEFAULT = 20
+
 logger = logging.getLogger(__name__)
 
 
-def start(*, interval_seconds: int = 60) -> BackgroundScheduler:
+def start(*, interval_seconds: int = INTERVAL_SECONDS_DEFAULT) -> BackgroundScheduler:
     """Démarre le job périodique en tâche de fond et renvoie le scheduler.
 
     Le scheduler tourne dans un thread du process courant (pas de nouveau

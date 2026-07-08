@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import argparse
 import logging
-import os
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -49,11 +48,11 @@ def main() -> None:
                 print("\nÀ bientôt !")
                 break
     finally:
-        job.shutdown(wait=False)
-        # Un tick en cours (appel LLM) laisse un thread non-daemon vivant
-        # (ThreadPoolExecutor d'APScheduler) : Python l'attendrait sinon à la
-        # sortie normale, malgré le shutdown(wait=False) ci-dessus.
-        os._exit(0)
+        # wait=True : si un tick est en cours (appel LLM, routage, purge du
+        # tampon), on le laisse terminer avant de couper le process — sinon
+        # le message reste indéfiniment dans `message_brut` (LLM appelé mais
+        # `buffer.delete` jamais atteint).
+        job.shutdown(wait=True)
 
 
 if __name__ == "__main__":

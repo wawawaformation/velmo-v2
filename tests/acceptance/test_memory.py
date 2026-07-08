@@ -19,6 +19,7 @@ def test_recall_over_30_turns():
     mm = MemoryManager()
     user = "acc-recall"
     mm.write(user, "Ma commande prioritaire est O-2024-0101.", "C'est noté.")
+    mm.run_pending_job(user)  # distille vers le long terme avant que le fil court terme ne tronque
     for i in range(30):
         mm.write(user, f"Question de suivi {i} sur un maillot.", f"Réponse {i}.")
 

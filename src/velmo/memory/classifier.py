@@ -17,7 +17,7 @@ from .semantic import KNOWN_KEYS
 Destination = Literal["semantic_column", "semantic_vector", "episodic", "none"]
 _VALID_DESTINATIONS = {"semantic_column", "semantic_vector", "episodic", "none"}
 
-_POINTURE_RE = re.compile(r"^(?:[3-5]\d|[SMLX]{1,3})$", re.I)
+_POINTURE_RE = re.compile(r"^(?:3\d|4\d|5[0-2]|[SMLX]{1,3})$", re.I)
 _SEGMENT_VALUES = {"particulier", "pro", "revendeur"}
 _TUTOIEMENT_VALUES = {"tutoiement", "vouvoiement"}
 _CANAL_CONTACT_VALUES = {"email", "téléphone", "telephone", "sms"}
@@ -88,8 +88,8 @@ def _extract_known_column(message: str) -> ClassificationResult | None:
         return ClassificationResult("semantic_column", "langue", "français")
     if re.search(r"email", low) and "telephone" not in low and "téléphone" not in low:
         return ClassificationResult("semantic_column", "canal_contact", "email")
-    if re.search(r"pointure\s+(?:est\s+)?(?:du\s+)?(\w+)", low):
-        m = re.search(r"pointure\s+(?:est\s+)?(?:du\s+)?(\w+)", low)
+    m = re.search(r"pointure.*?\b([3-5]\d|[SMLX]{1,3})\b", low)
+    if m:
         return ClassificationResult("semantic_column", "pointure", m.group(1))
     return None
 
@@ -99,7 +99,9 @@ def _classify_with_rules(message: str) -> ClassificationResult:
     known = _extract_known_column(message)
     if known is not None:
         assert known.key in KNOWN_KEYS
-        return known
+        validator = _VALUE_VALIDATORS.get(known.key)
+        if validator is None or validator(known.value):
+            return known
 
     if _EPISODIC_HINTS.search(message):
         return ClassificationResult("episodic", value=message.strip())

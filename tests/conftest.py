@@ -17,6 +17,25 @@ from velmo.sampledata import seed
 
 EVAL_DIR = Path(__file__).resolve().parent.parent / "eval"
 
+_AZURE_ENV_VARS = (
+    "AZURE_AI_INFERENCE_ENDPOINT",
+    "AZURE_AI_INFERENCE_API_KEY",
+    "AZURE_AI_INFERENCE_MODEL",
+    "AZURE_AI_CLASSIFIER_MODEL",
+)
+
+
+@pytest.fixture(autouse=True)
+def _no_real_llm_calls(monkeypatch):
+    """Neutralise les identifiants Azure pour forcer le repli `EchoLLM` (tests hors-ligne).
+
+    Sans ceci, `get_classifier_llm()`/`get_llm()` appellent le vrai Azure dès que ces
+    variables sont présentes dans l'environnement (ex. via `.env`), rendant les tests
+    lents (appels réseau réels) et non déterministes.
+    """
+    for var in _AZURE_ENV_VARS:
+        monkeypatch.delenv(var, raising=False)
+
 
 def load_jsonl(name: str) -> list[dict]:
     text = (EVAL_DIR / name).read_text(encoding="utf-8")
