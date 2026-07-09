@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import argparse
 import logging
+import threading
 from pathlib import Path
 
 from dotenv import load_dotenv
 
 from .agent import build_default_agent
+from .memory import MemoryManager
 from .memory import scheduler as memory_scheduler
 
 LOG_FILE = Path(__file__).resolve().parents[2] / "logs" / "memory.log"
@@ -36,12 +38,30 @@ def _configure_logging() -> None:
     latency_logger.propagate = False
 
 
+def _preload_facts_in_background(user_id: str) -> None:
+    """Précharge les faits connus d'un utilisateur au login (thread dédié).
+
+    Réduit la latence perçue du premier `MemoryManager.read()` en cours de
+    conversation : une session DB séparée est nécessaire (non partageable
+    entre threads), fermée à la fin du préchargement.
+    """
+    mm = MemoryManager()
+    try:
+        mm.preload_facts(user_id)
+    finally:
+        mm.close()
+
+
 def main() -> None:
     load_dotenv()
     _configure_logging()
     parser = argparse.ArgumentParser(description="Chat support Velmo 2.0")
     parser.add_argument("--user", default="C-marc-dubois", help="Identifiant client authentifié")
     args = parser.parse_args()
+
+    threading.Thread(
+        target=_preload_facts_in_background, args=(args.user,), daemon=True
+    ).start()
 
     agent = build_default_agent()
     if agent.memory._session.get_bind().dialect.name != "postgresql":

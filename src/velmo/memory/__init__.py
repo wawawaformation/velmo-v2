@@ -99,6 +99,17 @@ class MemoryManager:
         for user_id in buffer.pending_user_ids(self._session):
             process_pending(self._session, user_id)
 
+    def preload_facts(self, user_id: str) -> dict[str, str]:
+        """Faits connus d'un utilisateur, sans recherche sémantique/épisodique.
+
+        Destiné au préchargement au login (avant tout message) : réduit la
+        latence perçue du premier `read()` en cours de conversation.
+        """
+        known_facts = semantic.get_known_facts(self._session, user_id)
+        store = get_fact_store(self._session)
+        vector_facts = dict(store.all_facts(user_id)) if hasattr(store, "all_facts") else {}
+        return {**known_facts, **vector_facts}
+
     def remember_fact(self, user_id: str, key: str, value: str) -> None:
         """Persiste un fait durable sur l'utilisateur (écriture directe, sans passer par le tampon)."""
         if key in semantic.KNOWN_KEYS:

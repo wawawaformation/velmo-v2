@@ -42,3 +42,18 @@ def test_close_closes_the_underlying_session():
     mm.close()
 
     assert not session.in_transaction()
+
+
+def test_preload_facts_returns_known_and_vector_facts():
+    # Préchargement au login : mêmes faits que read(), mais sans recherche
+    # sémantique/épisodique (pas de message utilisateur au moment du login).
+    mm = MemoryManager()
+    user = "unit-preload-facts"
+    mm.remember_fact(user, "pointure", "42")
+    mm.remember_fact(user, "clubs", "OM")
+
+    facts = mm.preload_facts(user)
+
+    assert facts["pointure"] == "42"
+    assert facts["clubs"] == "OM"
+    mm.close()
