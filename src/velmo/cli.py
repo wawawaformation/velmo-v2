@@ -17,6 +17,7 @@ from .memory import scheduler as memory_scheduler
 
 LOG_FILE = Path(__file__).resolve().parents[2] / "logs" / "memory.log"
 LLM_LATENCY_LOG_FILE = Path(__file__).resolve().parents[2] / "logs" / "llm_latency.log"
+GUARDRAILS_LOG_FILE = Path(__file__).resolve().parents[2] / "logs" / "guardrails.log"
 
 
 def _configure_logging() -> None:
@@ -43,6 +44,13 @@ def _configure_logging() -> None:
     latency_logger.addHandler(latency_handler)
     latency_logger.setLevel(logging.INFO)
     latency_logger.propagate = False
+
+    guardrails_handler = logging.FileHandler(GUARDRAILS_LOG_FILE, encoding="utf-8")
+    guardrails_handler.setFormatter(logging.Formatter("%(asctime)s %(message)s"))
+    guardrails_logger = logging.getLogger("velmo.guardrails.events")
+    guardrails_logger.addHandler(guardrails_handler)
+    guardrails_logger.setLevel(logging.INFO)
+    guardrails_logger.propagate = False
 
 
 def _preload_facts_in_background(user_id: str) -> None:

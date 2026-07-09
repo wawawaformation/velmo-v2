@@ -8,14 +8,20 @@ Azure AI Foundry (Content Safety, Conversational PII redaction) en v2.
 
 from __future__ import annotations
 
+import logging
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
 from .moderation import detect_moderation
+from .moderation_llm import detect_moderation_llm
 from .pii import detect_pii
 from .prompt_injection import detect_prompt_injection
 from .scope import detect_out_of_scope
+
+# Journal dédié (fichier séparé logs/guardrails.log, câblé dans cli.py) :
+# une ligne par déclenchement, "datetime REGEX|LLM stage extrait_tronqué".
+_guardrail_logger = logging.getLogger("velmo.guardrails.events")
 
 # Catégories de contenus contrôlés.
 CATEGORIES = (
@@ -75,11 +81,26 @@ def _redact(text: str, limit: int = 40) -> str:
 
 @dataclass
 class GuardrailEngine:
-    """Applique les garde-fous d'entrée et de sortie et journalise les décisions."""
+    """Applique les garde-fous d'entrée et de sortie et journalise les décisions.
+
+    `llm` : classifieur de modération en cascade (second recours, cf.
+    `moderation_llm.py`) — résolu paresseusement via `get_classifier_llm()`
+    si non fourni, pour ne pas payer d'import Azure au chargement du module.
+    """
 
     events: list[dict] = field(default_factory=list)
+    llm: object | None = None
 
-    def _log(self, stage: str, category: str, action: str, reason: str, text: str) -> None:
+    def _classifier_llm(self):
+        if self.llm is None:
+            from velmo.llm import get_classifier_llm
+
+            self.llm = get_classifier_llm()
+        return self.llm
+
+    def _log(
+        self, stage: str, category: str, action: str, reason: str, text: str, source: str = "regex"
+    ) -> None:
         # PII/secret_leak : jamais la donnée brute, même tronquée — un secret court
         # situé en début de message survivrait à une troncature à 40 caractères.
         if category in _SENSITIVE_CATEGORIES:
@@ -95,8 +116,10 @@ class GuardrailEngine:
                 "action": action,
                 "reason": reason,
                 "excerpt_redacted": excerpt_redacted,
+                "source": source,
             }
         )
+        _guardrail_logger.info("%s %s %s", source.upper(), stage, excerpt_redacted)
 
     def check_input(self, message: str) -> Decision:
         """Contrôle un message entrant (modération, injection, périmètre)."""
@@ -113,6 +136,25 @@ class GuardrailEngine:
             return Decision(
                 allowed=False, action="block", category="prompt_injection",
                 reason="tentative d'injection de prompt", refusal=_REFUSAL_INJECTION,
+            )
+
+        # Second recours (cascade) : les règles ci-dessus n'ont rien détecté,
+        # le classifieur LLM attrape les reformulations qui leur échappent.
+        llm_category = detect_moderation_llm(message, self._classifier_llm())
+        if llm_category == "prompt_injection":
+            self._log(
+                "input", "prompt_injection", "block", "tentative d'injection de prompt",
+                message, source="llm",
+            )
+            return Decision(
+                allowed=False, action="block", category="prompt_injection",
+                reason="tentative d'injection de prompt", refusal=_REFUSAL_INJECTION,
+            )
+        if llm_category is not None:
+            self._log("input", llm_category, "block", "contenu interdit détecté", message, source="llm")
+            return Decision(
+                allowed=False, action="block", category=llm_category,
+                reason="contenu interdit détecté", refusal=_REFUSAL_MODERATION,
             )
 
         if detect_out_of_scope(message):
@@ -142,12 +184,31 @@ class GuardrailEngine:
                 reason="contenu interdit détecté", refusal=_REFUSAL_OUTPUT_BLOCKED,
             )
 
+        # Second recours (cascade), cf. check_input.
+        llm_category = detect_moderation_llm(text, self._classifier_llm())
+        if llm_category is not None and llm_category != "prompt_injection":
+            self._log("output", llm_category, "block", "contenu interdit détecté", text, source="llm")
+            return Decision(
+                allowed=False, action="block", category=llm_category,
+                reason="contenu interdit détecté", refusal=_REFUSAL_OUTPUT_BLOCKED,
+            )
+
         pii_category = detect_pii(text)
         if pii_category is not None:
             self._log("output", pii_category, "block", "donnée sensible détectée", text)
             return Decision(
                 allowed=False, action="block", category=pii_category,
                 reason="donnée sensible détectée", refusal=_REFUSAL_OUTPUT_BLOCKED,
+            )
+
+        # cf. synthese.md : le hors-périmètre est contrôlé en entrée ET en
+        # sortie — le LLM peut dériver spontanément (valorisation, conseil
+        # juridique...) même si la demande initiale était légitime.
+        if detect_out_of_scope(text):
+            self._log("output", "out_of_scope", "block", "réponse hors périmètre", text)
+            return Decision(
+                allowed=False, action="block", category="out_of_scope",
+                reason="réponse hors périmètre", refusal=_REFUSAL_OUT_OF_SCOPE,
             )
 
         return Decision(allowed=True, action="allow")
