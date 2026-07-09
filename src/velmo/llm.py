@@ -89,8 +89,36 @@ def get_llm() -> LLM:
     return LangChainAdapter(llm)
 
 
+def get_chat_model():
+    """Construit le vrai `BaseChatModel` Azure pour `create_agent()`, ou `None`.
+
+    Distinct de `get_llm()` : `create_agent()` (tool-calling natif LangGraph)
+    exige un `BaseChatModel` réel, pas le Protocol `LLM`/repli `EchoLLM` —
+    un faux modèle ne peut pas décider quels outils appeler.
+    """
+    if not os.getenv("AZURE_AI_INFERENCE_ENDPOINT"):
+        return None
+
+    from langchain_azure_ai.chat_models import AzureAIOpenAIApiChatModel
+
+    return AzureAIOpenAIApiChatModel(
+        endpoint=os.environ["AZURE_AI_INFERENCE_ENDPOINT"],
+        credential=os.environ["AZURE_AI_INFERENCE_API_KEY"],
+        model=os.environ.get("AZURE_AI_INFERENCE_MODEL", "Kimi-K2.6"),
+        timeout=LLM_TIMEOUT_SECONDS,
+    )
+
+
 def get_classifier_llm() -> LLM:
-    """Construit le client Azure du classifier mémoire (modèle dédié), sinon `EchoLLM`."""
+    """Construit le client Azure du classifier mémoire (modèle dédié), sinon `EchoLLM`.
+
+    `max_retries=0` : le SDK OpenAI retente 2 fois par défaut, ce qui peut
+    tripler la latence d'un échec (jusqu'à 3 × `LLM_TIMEOUT_SECONDS`, observé
+    à 16-32s en usage réel). Ce classifieur est désormais appelé de façon
+    synchrone dans le chemin critique de chaque réponse (`GuardrailMiddleware`,
+    cascade de modération), pas seulement en tâche de fond — un échec doit
+    retomber vite sur le repli règles plutôt que de bloquer l'utilisateur.
+    """
     if not os.getenv("AZURE_AI_INFERENCE_ENDPOINT") or not os.getenv("AZURE_AI_CLASSIFIER_MODEL"):
         return EchoLLM()
 
@@ -101,5 +129,6 @@ def get_classifier_llm() -> LLM:
         credential=os.environ["AZURE_AI_INFERENCE_API_KEY"],
         model=os.environ["AZURE_AI_CLASSIFIER_MODEL"],
         timeout=LLM_TIMEOUT_SECONDS,
+        max_retries=0,
     )
     return LangChainAdapter(llm)

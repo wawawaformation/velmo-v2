@@ -23,6 +23,7 @@ from sqlalchemy import (
     create_engine,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, sessionmaker
+from sqlalchemy.pool import StaticPool
 
 
 logger = logging.getLogger(__name__)
@@ -234,8 +235,21 @@ def session_factory(url: str | None = None):
 
 
 def fresh_sqlite_session():
-    """Session SQLite en mémoire avec le schéma créé (tests / évaluation hors-ligne)."""
-    engine = create_engine("sqlite://", future=True)
+    """Session SQLite en mémoire avec le schéma créé (tests / évaluation hors-ligne).
+
+    `check_same_thread=False` + `StaticPool` : les outils de l'agent LangGraph
+    (`create_agent()`) s'exécutent dans un thread différent de celui qui a ouvert
+    la connexion. Sans `check_same_thread=False`, SQLite refuse tout accès
+    cross-thread ; sans `StaticPool`, chaque connexion prise dans le pool par défaut
+    ouvrirait une base `:memory:` distincte et vide (une base en mémoire vit et
+    meurt avec sa connexion physique).
+    """
+    engine = create_engine(
+        "sqlite://",
+        future=True,
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
     Base.metadata.create_all(engine)
     return sessionmaker(bind=engine, expire_on_commit=False, future=True)()
 

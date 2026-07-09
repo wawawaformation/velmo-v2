@@ -2,16 +2,12 @@
 
 from __future__ import annotations
 
+from langchain_core.messages import AIMessage, SystemMessage
+
+from support.fake_chat_model import CapturingToolCallingModel
 from velmo.agent import Agent
 from velmo.guardrails import GuardrailEngine
 from velmo.memory import MemoryManager
-
-
-class CapturingLLM:
-    """LLM factice qui renvoie tel quel le contexte reçu (pour vérifier qu'il n'est pas vide)."""
-
-    def invoke(self, system: str, context: str, message: str) -> str:
-        return context
 
 
 def test_recall_over_30_turns():
@@ -91,17 +87,23 @@ def test_forget_removes_consolidated_episode_even_without_text_match():
 
 def test_agent_injects_memory_context_into_llm_fallback():
     # Non-régression : Agent.respond() doit transmettre le contexte mémoire au
-    # LLM pour toute question hors routage déterministe (sinon R1 est tenu par
-    # MemoryManager mais invisible pour l'utilisateur final, cf. bug agent.py
-    # où `self.memory.read(...)` était appelé puis son résultat jeté).
+    # modèle à chaque tour (via MemoryMiddleware.wrap_model_call, qui injecte
+    # le contexte mis en cache dans le prompt système) — vérifié sur la
+    # requête sortante réellement envoyée au modèle, pas sur le texte de
+    # réponse (qui est désormais rédigé librement par le LLM, cf. tool-calling).
+    model = CapturingToolCallingModel(
+        responses=[AIMessage("C'est noté."), AIMessage("Voici ma réponse.")]
+    )
     agent = Agent(
-        llm=CapturingLLM(),
+        model=model,
         memory=MemoryManager(),
         guardrails=GuardrailEngine(),
     )
     user = "acc-agent-context"
 
     agent.respond(user, "Bonjour, j'ai 50 ans, je suis né le 07/09/1975.")
-    reply = agent.respond(user, "Une question quelconque hors commande.")
+    agent.respond(user, "Une question quelconque hors commande.")
 
-    assert "50 ans" in reply
+    second_turn_messages = model.captured_messages[-1]
+    system_messages = [m for m in second_turn_messages if isinstance(m, SystemMessage)]
+    assert any("50 ans" in m.content for m in system_messages)

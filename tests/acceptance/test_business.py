@@ -7,9 +7,13 @@ contenu).
 
 from __future__ import annotations
 
+from langchain_core.messages import AIMessage
+
+from conftest import build_reference_agent
 from velmo.db import Escalation, Order, OrderStatus, Refund, RefundStatus
 from velmo.tools import get_order, trigger_refund, update_order_item
 from velmo.tools._common import select
+from support.fake_chat_model import ScriptedToolCallingModel
 
 
 def test_cannot_modify_shipped_order(db_session):
@@ -50,10 +54,42 @@ def test_isolation_other_customer_order(db_session):
     assert result.get("error") == "not_found_or_forbidden"
 
 
-def test_no_fabulation_when_out_of_stock(reference_agent):
-    # Variante om-1993 / M est à 0 : l'agent dit indisponible, ne fabule pas.
-    answer = reference_agent.respond("C-marc-dubois", "Le maillot om-1993 en taille M est-il disponible ?")
-    assert "indisponible" in answer.lower()
+def test_no_fabulation_when_out_of_stock():
+    # Variante om-1993 / M est à 0 : l'agent appelle bien check_stock (pas de
+    # fabulation) et l'outil renvoie available=False — comportement vérifié,
+    # pas le texte libre rédigé par le LLM.
+    model = ScriptedToolCallingModel(responses=[
+        AIMessage(
+            content="",
+            tool_calls=[
+                {"name": "check_stock", "args": {"product_ref": "om-1993", "size": "M"}, "id": "call_1"}
+            ],
+        ),
+        AIMessage("Ce maillot est indisponible en taille M."),
+    ])
+    agent = build_reference_agent(model=model)
+
+    import velmo.tools.catalog as catalog_module
+
+    original_check_stock = catalog_module.check_stock
+    calls = []
+
+    def spy_check_stock(session, product_ref, size):
+        result = original_check_stock(session, product_ref, size)
+        calls.append((product_ref, size, result))
+        return result
+
+    catalog_module.check_stock = spy_check_stock
+    try:
+        agent.respond("C-marc-dubois", "Le maillot om-1993 en taille M est-il disponible ?")
+    finally:
+        catalog_module.check_stock = original_check_stock
+
+    assert len(calls) == 1
+    product_ref, size, result = calls[0]
+    assert product_ref == "om-1993"
+    assert size == "M"
+    assert result["available"] is False
 
 
 def test_escalation_recorded_on_shipped_modification(db_session):

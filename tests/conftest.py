@@ -7,11 +7,13 @@ from pathlib import Path
 
 import pytest
 
+from langchain_core.messages import AIMessage
+
+from support.fake_chat_model import ScriptedToolCallingModel
 from velmo.agent import Agent
 from velmo.db import fresh_sqlite_session
 from velmo.guardrails import Decision, GuardrailEngine
 from velmo.kb_store import LocalKB
-from velmo.llm import EchoLLM
 from velmo.memory import MemoryManager
 from velmo.sampledata import seed
 
@@ -61,9 +63,16 @@ class AllowAllGuardrails:
         return Decision(allowed=True, action="allow")
 
 
-def build_reference_agent() -> Agent:
+def _echo_model(responses=None) -> ScriptedToolCallingModel:
+    """Modèle scriptable hors-ligne par défaut (une seule réponse passe-partout)."""
+    return ScriptedToolCallingModel(
+        responses=responses or [AIMessage("[velmo] J'ai bien reçu votre message.")]
+    )
+
+
+def build_reference_agent(model=None) -> Agent:
     return Agent(
-        llm=EchoLLM(),
+        model=model or _echo_model(),
         memory=MemoryManager(),
         guardrails=GuardrailEngine(),
         session=seeded_session(),
@@ -71,9 +80,9 @@ def build_reference_agent() -> Agent:
     )
 
 
-def build_degraded_agent() -> Agent:
+def build_degraded_agent(model=None) -> Agent:
     return Agent(
-        llm=EchoLLM(),
+        model=model or _echo_model(),
         memory=MemoryManager(),
         guardrails=AllowAllGuardrails(),
         session=seeded_session(),
