@@ -12,9 +12,11 @@ une valeur propre : un tri par recouvrement de tokens.
 
 from __future__ import annotations
 
+import logging
+
 from velmo.db import fresh_sqlite_session
 from velmo.memory import episodic
-from velmo.memory.episode_vector_store import LocalEpisodeStore
+from velmo.memory.episode_vector_store import LocalEpisodeStore, get_episode_store
 
 
 def _session():
@@ -51,3 +53,17 @@ def test_search_excludes_consolidated_episodes_by_default():
     results = store.search("u1", "pointure")
 
     assert results == []
+
+
+def test_get_episode_store_logs_warning_when_falling_back_to_local(monkeypatch, caplog):
+    # Bug corrigé : CHROMA_URL configuré mais injoignable/en échec retombait
+    # silencieusement sur LocalEpisodeStore, sans aucune trace — impossible de
+    # détecter que la mémoire n'utilisait jamais Chroma malgré la config.
+    monkeypatch.setenv("CHROMA_URL", "http://localhost:1")  # port fermé, échec de connexion
+    session = _session()
+
+    with caplog.at_level(logging.WARNING, logger="velmo.memory.episode_vector_store"):
+        store = get_episode_store(session)
+
+    assert isinstance(store, LocalEpisodeStore)
+    assert any("Chroma" in r.message for r in caplog.records)

@@ -73,6 +73,30 @@ def _read_line(stream) -> str | None:
     return raw.decode("utf-8", errors="replace").rstrip("\n")
 
 
+def _safe_respond(agent, user_id: str, message: str) -> str:
+    """Appelle `agent.respond()`, sans jamais laisser une exception se propager.
+
+    Un incident LLM/réseau (ex. `openai.APITimeoutError` sur le timeout de
+    `LLM_TIMEOUT_SECONDS`, cf. `src/velmo/llm.py`) tuait auparavant tout le
+    process CLI et perdait le fil de conversation en cours (observé en usage
+    réel). Ici, un message d'erreur est renvoyé à la place, la boucle continue.
+
+    Le message utilisateur est capturé en mémoire malgré l'échec (R6,
+    traçabilité) — symétrique au chemin garde-fou de `Agent.respond()`, qui
+    appelle déjà `memory.write()` sur un refus.
+    """
+    try:
+        return agent.respond(user_id, message)
+    except Exception:
+        logging.getLogger(__name__).exception("Échec de agent.respond()")
+        fallback = (
+            "Désolé, une erreur technique m'empêche de répondre pour l'instant "
+            "(problème réseau ou service indisponible). Réessayez dans un instant."
+        )
+        agent.memory.write(user_id, message, fallback)
+        return fallback
+
+
 def main() -> None:
     load_dotenv()
     _configure_logging()
@@ -104,7 +128,7 @@ def main() -> None:
                 message = line.strip()
                 if not message:
                     continue
-                print(f"\nVelmo : {agent.respond(args.user, message)}")
+                print(f"\nVelmo : {_safe_respond(agent, args.user, message)}")
             except KeyboardInterrupt:
                 print("\nÀ bientôt !")
                 break

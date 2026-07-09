@@ -127,6 +127,8 @@ class MemoryManager:
         removed += store.delete_matching(user_id, target)
         removed += episodic.delete_matching(self._session, user_id, target)
         removed += episodic.delete_by_consolidated_key(self._session, user_id, target)
+        episode_store = get_episode_store(self._session)
+        episode_store.delete_matching(user_id, target)
         removed += buffer.delete_matching(self._session, user_id, target)
         return removed
 

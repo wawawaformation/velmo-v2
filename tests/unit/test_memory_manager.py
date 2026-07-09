@@ -16,9 +16,14 @@ from velmo.memory import MemoryManager
 from velmo.memory.episode_vector_store import LocalEpisodeStore
 
 
-def test_read_queries_episode_vector_store():
+def test_read_queries_episode_vector_store(monkeypatch):
     # read() doit interroger le vector store épisodique (en plus de
     # search_episodes) pour bénéficier du tri par similarité de sens.
+    # CHROMA_URL désactivé explicitement : le test porte sur le câblage
+    # read() -> episode_store.search(), pas sur le choix Chroma/local (qui
+    # dépend de l'environnement réel — sinon ce test est fragile selon que
+    # Chroma tourne ou non au moment de l'exécution).
+    monkeypatch.delenv("CHROMA_URL", raising=False)
     mm = MemoryManager()
     user = "unit-read-episode-vector"
 

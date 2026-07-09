@@ -1,4 +1,4 @@
-# Script de présentation — Mémoire Velmo 2.0 (10-15 min)
+# Script de présentation — Mémoire Velmo 2.0 (15-20 min)
 
 But de ce document : dérouler la présentation sans improviser, avec une checklist
 qui élimine la cause du dernier échec (repli SQLite silencieux quand Postgres
@@ -7,9 +7,12 @@ n'était pas encore prêt).
 Ordre retenu : **démo live d'abord** (concret, accroche), **puis le schéma**
 (explique ce qu'on vient de voir), **puis le code** (pour qui veut creuser).
 
-Durée cible : **7-10 min** de démo live + **3-4 min** de schéma/code.
+Durée cible : **12-15 min** de démo live (mémoire + latence LLM + préchargement
+login + robustesse UTF-8) + **3-4 min** de schéma/code. Les démos 5 à 7
+(dernières évolutions techniques) sont optionnelles si le temps manque —
+signalées comme telles ci-dessous.
 
-**Prérequis de terminal** : Terminator avec 3 panneaux (splits combinés
+**Prérequis de terminal** : Terminator avec 4 panneaux (splits combinés
 `Ctrl+Shift+O`/`Ctrl+Shift+E`), tous visibles à l'écran pendant toute la démo :
 
 - **Panneau A** : shell `psql` déjà connecté à la base (`velmo=#`), utilisé pour
@@ -19,9 +22,12 @@ Durée cible : **7-10 min** de démo live + **3-4 min** de schéma/code.
 - **Panneau C** : `tail -f logs/memory.log`, pour montrer en direct le tick du
   scheduler (appel LLM, traitement) pendant les temps d'attente des démos —
   rend visible ce qui se passe pendant les 40 secondes d'attente.
+- **Panneau D** : `tail -f logs/llm_latency.log`, pour montrer en direct
+  chaque appel LLM (chat et consolidation) avec sa durée, sans avoir à
+  interrompre la démo pour aller lire le fichier (utile pour la Démo 3).
 
 Astuce Terminator : grossir la police avant de commencer (`Ctrl+` plusieurs
-fois dans chaque panneau) pour que le public lise les trois panneaux sans
+fois dans chaque panneau) pour que le public lise les quatre panneaux sans
 plisser les yeux.
 
 Toutes les requêtes SQL ci-dessous sont à taper **directement dans le prompt
@@ -55,7 +61,7 @@ docker compose ps
 `postgres` n'est pas encore `healthy`, attendre quelques secondes et relancer
 `docker compose ps` avant de continuer — ne pas lancer le CLI avant ce statut.
 
-Ouvrir les 3 panneaux Terminator (`Ctrl+Shift+O`/`Ctrl+Shift+E`), puis dans le
+Ouvrir les 4 panneaux Terminator (`Ctrl+Shift+O`/`Ctrl+Shift+E`), puis dans le
 **Panneau A**, se connecter à Postgres en interactif :
 
 ```bash
@@ -65,7 +71,8 @@ docker compose exec postgres psql -U app -d velmo
 → le prompt devient `velmo=#` : c'est ce panneau qui sert pour toutes les
 requêtes SQL du reste du script.
 
-Dans le **Panneau C**, suivre les logs mémoire en direct :
+Dans le **Panneau C**, suivre les logs de l'ordonnanceur (scheduler mémoire)
+en direct :
 
 ```bash
 tail -f logs/memory.log
@@ -74,6 +81,16 @@ tail -f logs/memory.log
 → ce panneau restera ouvert pendant toute la démo ; il affichera les ticks du
 scheduler (`Scheduler started`, l'appel LLM `httpx: ... 200 OK`) au fur et à
 mesure qu'ils se produisent, sans action de votre part.
+
+Dans le **Panneau D**, suivre les latences LLM en direct :
+
+```bash
+tail -f logs/llm_latency.log
+```
+
+→ ce panneau affichera une ligne (`model=... latency_ms=...`) à chaque appel
+LLM, chat comme consolidation — pratique pendant les 40 secondes d'attente
+pour montrer concrètement ce qui se passe, sans commande à taper.
 
 ---
 
@@ -126,6 +143,37 @@ Dans le Panneau A (`velmo=#`), lister les tables avant de commencer :
 (`customers`, `orders`, `products`...) : `memory_users`, `message_brut`,
 `memory_episodes`, `memory_facts`. Dire : *"La mémoire vit dans le même schéma
 que les données métier, pas dans une base à part."*
+
+Montrer aussi les collections vectorielles Chroma (aucun shell interactif
+type `psql`, on passe par un script Python court, dans un shell libre) :
+
+```bash
+uv run python -c "
+from dotenv import load_dotenv
+load_dotenv()
+import chromadb
+from chromadb.config import Settings
+client = chromadb.HttpClient(
+    host='localhost', port=8001,
+    settings=Settings(anonymized_telemetry=False),
+)
+for c in client.list_collections():
+    print(c.name, '->', c.count(), 'éléments')
+"
+```
+
+→ 3 collections attendues : `velmo_faq` (FAQ, alimentée par `make seed-kb`),
+`velmo_episodes` et `velmo_memory` (mémoire épisodique/sémantique clé libre).
+Dire : *"Chroma est le backend réel de la mémoire dès que `CHROMA_URL` est
+joignable — le repli relationnel (`memory_episodes`/`memory_facts`) ne
+prend le relais qu'en cas d'indisponibilité, avec un warning explicite dans
+`logs/memory.log` (`Chroma ... injoignable ou en échec — repli sur
+Local...Store`)."* Si `velmo_episodes`/`velmo_memory` sont absentes ici,
+c'est le signe que ce repli est actif — vérifier `docker compose ps chroma`
+et ce warning.
+
+*(`anonymized_telemetry=False` évite le `Failed to send telemetry event`
+inoffensif mais bruyant que Chroma affiche sinon à chaque connexion.)*
 
 Dans le **Panneau B**, lancer :
 
@@ -253,11 +301,11 @@ SELECT contenu FROM memory_episodes WHERE user_id = 'C-marc-dubois' ORDER BY dat
 → **Attendu** : ce message aussi finit dans `memory_episodes`. Même mécanisme :
 capture et consolidation indépendantes du routage de réponse.
 
-### Démo 2ter — Fait à clé imprévisible (`memory_facts` / vecteur) (~2 min)
+### Démo 2ter — Fait à clé imprévisible (Chroma / vecteur) (~2 min)
 
 Dire : *"Un fait qui n'a pas de colonne dédiée (un numéro de contrat, un
-secret) part vers le store à clé libre — Chroma si disponible, sinon un repli
-relationnel local `memory_facts`."*
+secret) part vers le store à clé libre — Chroma en usage normal, avec un
+repli relationnel local `memory_facts` si Chroma est indisponible."*
 
 Dans le CLI (Panneau B, toujours ouvert) :
 
@@ -265,18 +313,91 @@ Dans le CLI (Panneau B, toujours ouvert) :
 Mon numéro de contrat est CT-4521.
 ```
 
-Attendre ~40 secondes (Panneau C pour suivre le tick). Puis, dans le Panneau A :
+Attendre ~40 secondes (Panneau C pour suivre le tick). Puis, l'inspection
+passe par `MemoryManager.inspect()` (pas de SQL direct, le fait est indexé
+dans Chroma, pas dans `memory_facts`) :
 
-```sql
-SELECT key, value FROM memory_facts WHERE user_id = 'C-marc-dubois';
+```bash
+uv run python -c "
+from dotenv import load_dotenv
+load_dotenv()
+from velmo.memory import MemoryManager
+mm = MemoryManager()
+print(mm.inspect('C-marc-dubois'))
+mm.close()
+"
 ```
 
-→ **Attendu** : une ligne avec la `value` contenant `CT-4521`. Si le fait
-n'apparaît pas ici, vérifier si Chroma est utilisé à la place (`docker compose
-ps chroma`) — dans ce cas l'inspection passe par `MemoryManager.inspect()`
-plutôt que par une requête SQL directe sur `memory_facts`.
+→ **Attendu** : `CT-4521` apparaît dans les faits retournés. Si absent ici,
+vérifier `memory_facts` en SQL comme repli (`SELECT key, value FROM
+memory_facts WHERE user_id = 'C-marc-dubois';`) — signe que Chroma est
+indisponible pour cette session (voir le warning dans `logs/memory.log`).
 
-### Démo 3 — Isolation entre utilisateurs (~2 min)
+### Démo 3 — Log de latence LLM (~1 min, optionnel)
+
+Dire : *"Chaque appel LLM — chat principal et consolidation mémoire — est
+mesuré et journalisé en direct dans un fichier séparé, pour objectiver les
+temps de réponse réels."* Pointer le **Panneau D**, déjà ouvert sur
+`tail -f logs/llm_latency.log`.
+
+Dans le CLI (Panneau B, toujours ouvert), un message qui déclenche un appel
+LLM direct (pas de routage déterministe, pas de FAQ) :
+
+```text
+Que peux-tu me dire sur les maillots collector en général ?
+```
+
+→ **Attendu** : une ligne `model=Kimi-K2.6 latency_ms=NNN.N` apparaît
+**aussitôt** dans le Panneau D. Attendre ~20-40 s (tick du scheduler,
+visible en parallèle dans le Panneau C) : une **deuxième** ligne apparaît
+dans le Panneau D, avec le modèle de classification/consolidation
+(`Phi-4-mini-instruct` ou équivalent) — même mécanisme pour les appels
+internes, pas seulement le chat. Dire : *"Le fichier tourne en rotation
+(1 Mo, 3 sauvegardes) pour ne jamais grossir indéfiniment."*
+
+### Démo 4 — Préchargement mémoire au login (~1-2 min, optionnel)
+
+Dire : *"Au lancement du CLI, un thread en tâche de fond charge déjà les
+faits connus de l'utilisateur, avant même son premier message — pour que la
+première réponse mémoire soit plus rapide."*
+
+Fermer le CLI courant (Ctrl+C). Relancer :
+
+```bash
+make chat
+```
+
+→ **Attendu** : `Velmo 2.0 prêt (client C-marc-dubois)...` s'affiche sans
+délai perceptible (le préchargement tourne en arrière-plan, il ne bloque
+jamais le prompt). Taper :
+
+```text
+Tu te souviens de moi ?
+```
+
+→ **Attendu** : le LLM restitue les faits déjà connus (ex. `pointure=43` si
+la Démo 2 a été faite juste avant) — preuve indirecte que le préchargement
+et `read()` pointent vers les mêmes données, seule la latence perçue change.
+
+### Démo 5 — Robustesse face à un octet UTF-8 invalide (~1 min, optionnel)
+
+Dire : *"Un bug réel observé en usage : une touche morte mal interceptée par
+le terminal envoyait un octet invalide, qui faisait planter tout le CLI et
+perdait la conversation. Ce n'est plus le cas."*
+
+Fermer le CLI courant si besoin (Ctrl+C). Dans un shell libre (l'octet
+invalide est difficile à taper au clavier, on le prépare via un pipe) :
+
+```bash
+printf 'salut\nVoici mon numero de contrat : \xc2XT-30445\nOK merci\n' | uv run python -m velmo.cli
+```
+
+→ **Attendu** : les trois messages reçoivent chacun une réponse, y compris
+celui contenant l'octet invalide (transformé en `�`, le reste du message
+reste lisible) ; le process se termine proprement (`À bientôt !`), sans
+`Traceback`.
+
+### Démo 6 — Isolation entre utilisateurs (~2 min)
 
 Dans le Panneau B, fermer le CLI courant (Ctrl+C, attendre `À bientôt !`).
 
@@ -302,7 +423,13 @@ SELECT id, pointure FROM memory_users;
 → deux lignes distinctes, chacune avec sa pointure — aucun mélange entre
 `C-marc-dubois` et `C-demo-isolation`.
 
-### Démo 4 — Oubli contrôlé (~2 min, optionnel si le temps le permet)
+### Démo 7 — Oubli contrôlé (~2 min, optionnel si le temps le permet)
+
+Dire : *"`forget()` purge à la fois la base relationnelle et l'episode store
+vectoriel Chroma — un oubli qui ne toucherait que Postgres laisserait
+l'épisode retrouvable via une recherche par similarité, une vraie fuite RGPD.
+C'est un bug qu'on a corrigé récemment (l'un existait sans qu'on le sache,
+masqué par un autre bug qui empêchait Chroma d'être utilisé du tout)."*
 
 Dans un shell normal (pas Panneau A, pas Panneau B — ou réutiliser B une fois
 le CLI fermé) :
@@ -350,10 +477,10 @@ schéma en pointant, dans l'ordre, ce que la démo a montré :
    pas de LLM) ; un scheduler périodique (toutes les 20s ici, configurable)
    déclenche la classification et le routage vers le long terme — c'est le
    Panneau C qu'on vient de regarder pendant les 40 secondes d'attente.
-3. **Isolation stricte par `user_id`** : la Démo 3 vient de le montrer, deux
+3. **Isolation stricte par `user_id`** : la Démo 6 vient de le montrer, deux
    lignes distinctes dans `memory_users`.
 4. **Oubli contrôlé (R5)** : `forget()` purge dans toutes les briques d'un coup
-   (Démo 4).
+   (Démo 7).
 
 Ne pas dérouler tout le détail fichier/ligne ici — rester au niveau du schéma,
 le détail vient dans la partie suivante.
@@ -410,6 +537,14 @@ DELETE FROM memory_episodes;
 DELETE FROM memory_facts;
 ```
 
+Fermer les Panneaux C et D (Ctrl+C sur chaque `tail -f`), puis dans un shell
+libre :
+
+```bash
+: > logs/llm_latency.log
+: > logs/memory.log
+```
+
 ---
 
 ## Si quelque chose se passe mal pendant la démo
@@ -432,9 +567,27 @@ DELETE FROM memory_facts;
   que le Panneau A est bien connecté à la base du `docker compose`
   (`velmo=#`), jamais à un fichier `.velmo_memory.db` (SQLite local, à ignorer
   s'il existe).
-- **La commande `forget()` de la démo 4 semble fonctionner (`supprimés : N`)
+- **La commande `forget()` de la démo 7 semble fonctionner (`supprimés : N`)
   mais rien ne change dans le Panneau A** : la commande `uv run python -c "..."`
   n'a pas chargé le `.env` (pas de `load_dotenv()`), donc elle a agi sur le
   fichier SQLite local, pas sur Postgres. Vérifier que le bloc de code contient
   bien `from dotenv import load_dotenv; load_dotenv()` avant l'import de
   `velmo.memory`.
+- **`logs/llm_latency.log` reste vide après un message (Démo 3)** : vérifier
+  que le CLI a bien été lancé via `make chat` (pas un `uv run python -c "..."`
+  isolé) — c'est `cli.py::_configure_logging` qui câble le `RotatingFileHandler`
+  dédié, rien n'est journalisé sans ce câblage.
+- **Le pipe de la Démo 5 (`printf ... | uv run python -m velmo.cli`) affiche
+  un `Traceback UnicodeDecodeError`** : la régression n'est pas corrigée —
+  vérifier que `_read_line` (dans `src/velmo/cli.py`) est bien utilisée dans
+  la boucle de `main()` à la place de `input()`.
+- **`velmo_episodes`/`velmo_memory` absentes dans l'inspection Chroma de
+  l'ouverture, alors que `docker compose ps chroma` montre le conteneur
+  `Up`** : chercher une ligne `WARNING ... Chroma (CHROMA_URL=...)
+  injoignable ou en échec — repli sur Local...Store` dans `logs/memory.log`
+  (Panneau C) — la trace complète de l'exception y est jointe
+  (`exc_info=True`), utile pour diagnostiquer sans deviner. Un bug de ce
+  type (décorateur `@override` manquant dans `chroma_telemetry.py`) a déjà
+  fait planter silencieusement toute bascule vers Chroma par le passé,
+  corrigé depuis — si le warning apparaît malgré tout, c'est un nouvel
+  incident à investiguer, pas un comportement attendu.

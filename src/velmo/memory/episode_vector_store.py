@@ -9,12 +9,15 @@ pattern que `vector_store.py`, garantit un fonctionnement hors-ligne).
 
 from __future__ import annotations
 
+import logging
 import os
 import uuid
 from urllib.parse import urlparse
 
 from . import episodic
 from .vector_store import _tokens
+
+logger = logging.getLogger(__name__)
 
 
 class LocalEpisodeStore:
@@ -108,5 +111,10 @@ def get_episode_store(session):
         )
         collection = client.get_or_create_collection("velmo_episodes", embedding_function=embedder)
     except Exception:
+        logger.warning(
+            "Chroma (CHROMA_URL=%s) injoignable ou en échec — repli sur "
+            "LocalEpisodeStore (relationnel, mémoire épisodique)", chroma_url,
+            exc_info=True,
+        )
         return LocalEpisodeStore(session)
     return ChromaEpisodeStore(collection)

@@ -7,6 +7,7 @@ garantit un fonctionnement hors-ligne (CI sans réseau, sans extra `vector`).
 
 from __future__ import annotations
 
+import logging
 import os
 import re
 import unicodedata
@@ -16,6 +17,8 @@ from urllib.parse import urlparse
 from sqlalchemy import select
 
 from velmo.db import MemoryFact
+
+logger = logging.getLogger(__name__)
 
 
 def _tokens(text: str) -> set[str]:
@@ -150,5 +153,10 @@ def get_fact_store(session):
         )
         collection = client.get_or_create_collection("velmo_memory", embedding_function=embedder)
     except Exception:
+        logger.warning(
+            "Chroma (CHROMA_URL=%s) injoignable ou en échec — repli sur "
+            "LocalFactStore (relationnel, mémoire sémantique clé libre)", chroma_url,
+            exc_info=True,
+        )
         return LocalFactStore(session)
     return ChromaFactStore(collection)
