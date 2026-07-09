@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import argparse
 import logging
+import sys
 import threading
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -30,7 +32,12 @@ def _configure_logging() -> None:
     root.addHandler(handler)
     root.setLevel(logging.INFO)
 
-    latency_handler = logging.FileHandler(LLM_LATENCY_LOG_FILE, encoding="utf-8")
+    # Un appel LLM toutes les ~20s (tick scheduler) : rotation à 1 Mo, 3
+    # fichiers de sauvegarde conservés (llm_latency.log.1/.2/.3), pour éviter
+    # une croissance illimitée du fichier en usage prolongé.
+    latency_handler = RotatingFileHandler(
+        LLM_LATENCY_LOG_FILE, maxBytes=1_000_000, backupCount=3, encoding="utf-8"
+    )
     latency_handler.setFormatter(logging.Formatter("%(asctime)s %(message)s"))
     latency_logger = logging.getLogger("velmo.llm.latency")
     latency_logger.addHandler(latency_handler)
@@ -50,6 +57,20 @@ def _preload_facts_in_background(user_id: str) -> None:
         mm.preload_facts(user_id)
     finally:
         mm.close()
+
+
+def _read_line(stream) -> str | None:
+    """Lit une ligne depuis un flux binaire, tolérante aux octets UTF-8 invalides.
+
+    `input()` plante avec `UnicodeDecodeError` sur un octet invalide (ex.
+    touche morte mal interceptée par le terminal) — ici, l'octet fautif est
+    remplacé plutôt que de tuer le process et perdre le fil de conversation.
+    Renvoie `None` en fin de flux (équivalent EOF).
+    """
+    raw = stream.readline()
+    if not raw:
+        return None
+    return raw.decode("utf-8", errors="replace").rstrip("\n")
 
 
 def main() -> None:
@@ -75,11 +96,16 @@ def main() -> None:
     try:
         while True:
             try:
-                message = input("\nVous : ").strip()
+                print("\nVous : ", end="", flush=True)
+                line = _read_line(sys.stdin.buffer)
+                if line is None:
+                    print("\nÀ bientôt !")
+                    break
+                message = line.strip()
                 if not message:
                     continue
                 print(f"\nVelmo : {agent.respond(args.user, message)}")
-            except (KeyboardInterrupt, EOFError):
+            except KeyboardInterrupt:
                 print("\nÀ bientôt !")
                 break
     finally:
