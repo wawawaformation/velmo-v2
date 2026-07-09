@@ -12,12 +12,14 @@ from .agent import build_default_agent
 from .memory import scheduler as memory_scheduler
 
 LOG_FILE = Path(__file__).resolve().parents[2] / "logs" / "memory.log"
+LLM_LATENCY_LOG_FILE = Path(__file__).resolve().parents[2] / "logs" / "llm_latency.log"
 
 
 def _configure_logging() -> None:
     """Redirige les logs (scheduler mémoire, APScheduler) vers un fichier :
     évite de polluer le prompt interactif du CLI (cf. bug #skipped: maximum
-    number of running instances)."""
+    number of running instances). La latence des appels LLM part dans un
+    fichier dédié (pas de propagation vers le root logger)."""
     LOG_FILE.parent.mkdir(exist_ok=True)
     handler = logging.FileHandler(LOG_FILE, encoding="utf-8")
     handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
@@ -25,6 +27,13 @@ def _configure_logging() -> None:
     root.handlers.clear()
     root.addHandler(handler)
     root.setLevel(logging.INFO)
+
+    latency_handler = logging.FileHandler(LLM_LATENCY_LOG_FILE, encoding="utf-8")
+    latency_handler.setFormatter(logging.Formatter("%(asctime)s %(message)s"))
+    latency_logger = logging.getLogger("velmo.llm.latency")
+    latency_logger.addHandler(latency_handler)
+    latency_logger.setLevel(logging.INFO)
+    latency_logger.propagate = False
 
 
 def main() -> None:

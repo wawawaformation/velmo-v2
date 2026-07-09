@@ -7,6 +7,8 @@ tournent sans dépendre du SDK ni d'un endpoint joignable.
 from __future__ import annotations
 
 import os
+import time
+from logging import getLogger
 from typing import Protocol
 
 # Sans timeout explicite, le client Azure attend indéfiniment une réponse :
@@ -14,6 +16,11 @@ from typing import Protocol
 # et tous les ticks suivants sont skippés (max_instances=1), empilant les
 # messages dans `message_brut` sans jamais les traiter.
 LLM_TIMEOUT_SECONDS = 15
+
+# Logger dédié (fichier séparé logs/llm_latency.log, câblé dans cli.py) :
+# couvre tout appel LLM, chat principal comme classification/consolidation
+# mémoire, puisque les deux passent par LangChainAdapter.invoke().
+_latency_logger = getLogger("velmo.llm.latency")
 
 
 class LLM(Protocol):
@@ -39,6 +46,7 @@ class LangChainAdapter:
         from langchain_core.prompts import PromptTemplate
 
         self._llm = llm
+        self._model_name = getattr(llm, "model", "unknown")
         # Template avec variables {system}, {context}, {message}
         prompt_template = PromptTemplate.from_template(
             "{system}\n"
@@ -48,14 +56,20 @@ class LangChainAdapter:
         self._chain = prompt_template | self._llm
 
     def invoke(self, system: str, context: str, message: str) -> str:
-        """Appelle la chaîne Runnable avec les variables de prompt."""
+        """Appelle la chaîne Runnable avec les variables de prompt, logue la latence."""
         # Préparer les entrées pour le template
         context_str = f"Mémoire:\n{context}\n" if context else ""
+        start = time.monotonic()
         result = self._chain.invoke({
             "system": system,
             "context": context_str,
             "message": message,
         })
+        latency_ms = (time.monotonic() - start) * 1000
+        _latency_logger.info(
+            "model=%s latency_ms=%.1f", self._model_name, latency_ms,
+            extra={"latency_ms": latency_ms},
+        )
         return result.content
 
 
