@@ -109,6 +109,35 @@ def test_consolidate_falls_back_to_rules_when_llm_response_is_invalid_json():
     assert result == consolidate("Où en est ma commande O-2024-0103 ?", llm=None)
 
 
+def test_consolidate_falls_back_to_rules_when_episode_is_null():
+    # Bug réel observé : un LLM (petit modèle, réponse dégradée) peut renvoyer
+    # un JSON structurellement valide avec "episode": null — sans repli, ça
+    # plante l'insertion Postgres (contenu NOT NULL) et bloque le message
+    # indéfiniment dans message_brut (observé en usage réel, tick suivants
+    # non affectés mais le message reste coincé).
+    llm = FakeLLM('{"episode": null, "semantic": null}')
+
+    result = consolidate("Ma pointure de chaussure c'est du 43.", llm=llm)
+
+    assert result == consolidate("Ma pointure de chaussure c'est du 43.", llm=None)
+
+
+def test_consolidate_falls_back_to_rules_when_episode_key_is_missing():
+    llm = FakeLLM('{"semantic": null}')
+
+    result = consolidate("Ma pointure de chaussure c'est du 43.", llm=llm)
+
+    assert result == consolidate("Ma pointure de chaussure c'est du 43.", llm=None)
+
+
+def test_consolidate_falls_back_to_rules_when_episode_is_empty_string():
+    llm = FakeLLM('{"episode": "", "semantic": null}')
+
+    result = consolidate("Ma pointure de chaussure c'est du 43.", llm=llm)
+
+    assert result == consolidate("Ma pointure de chaussure c'est du 43.", llm=None)
+
+
 def test_consolidate_rejects_implausible_semantic_value():
     # Cas réel observé : une année de naissance ne doit pas être consolidée
     # comme pointure, même si le LLM la propose comme telle.

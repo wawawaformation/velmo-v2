@@ -100,6 +100,42 @@ def test_process_pending_episode_is_searchable_via_episode_vector_store():
     ]
 
 
+class FlakyLLM:
+    """LLM factice qui échoue sur les messages contenant `fail_marker`."""
+
+    def __init__(self, response: str, fail_marker: str) -> None:
+        self.response = response
+        self.fail_marker = fail_marker
+
+    def invoke(self, system: str, context: str, message: str) -> str:
+        if self.fail_marker in message:
+            raise TimeoutError("Request timed out.")
+        return self.response
+
+
+def test_process_pending_isolates_failures_between_messages():
+    # Bug réel observé : un timeout LLM (openai.APITimeoutError en usage réel)
+    # sur UN message du batch bloquait indéfiniment TOUS les messages en
+    # attente du même utilisateur — buffer.delete() n'était appelé qu'après
+    # la boucle complète, jamais atteint si un message échouait avant la fin.
+    session = _session()
+    buffer.capture(session, "u1", "user", "Message qui va échouer")
+    buffer.capture(session, "u1", "user", "Message qui doit réussir")
+    llm = FlakyLLM(
+        '{"episode": "Message qui doit réussir", "semantic": null}',
+        fail_marker="échouer",
+    )
+
+    processor.process_pending(session, "u1", llm=llm)
+
+    # Le message réussi est traité et purgé du tampon...
+    assert episodic.list_episodes(session, "u1") == ["Message qui doit réussir"]
+    pending = [row.contenu for row in buffer.pending_for(session, "u1")]
+    assert "Message qui doit réussir" not in pending
+    # ...le message en échec reste en attente pour être retenté au tick suivant.
+    assert "Message qui va échouer" in pending
+
+
 def test_process_pending_links_episode_to_semantic_by_key_not_text_match():
     # Le texte épisodique nettoyé par le LLM ne contient PAS littéralement "pointure"
     # (le mot n'apparaît nulle part) — seul consolidated_key permet de relier

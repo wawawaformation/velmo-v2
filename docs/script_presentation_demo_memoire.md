@@ -113,6 +113,33 @@ DELETE FROM memory_episodes;
 DELETE FROM memory_facts;
 ```
 
+**Important** : Chroma étant réellement utilisé pour la mémoire (dès que
+`CHROMA_URL` est joignable), ce nettoyage SQL ne suffit plus seul — les
+anciens épisodes/faits restent indexés dans `velmo_episodes`/`velmo_memory`
+et remontent quand même via la recherche par similarité, même après un
+`DELETE FROM memory_episodes` complet (observé en usage réel : une réponse
+mentionnant un contexte d'une session précédente pourtant purgée en SQL).
+Vider aussi les collections Chroma (dans un shell libre, **pas** `velmo_faq`
+— c'est la FAQ, pas la mémoire conversationnelle) :
+
+```bash
+uv run python -c "
+from dotenv import load_dotenv
+load_dotenv()
+import chromadb
+from chromadb.config import Settings
+client = chromadb.HttpClient(
+    host='localhost', port=8001,
+    settings=Settings(anonymized_telemetry=False),
+)
+for name in ['velmo_episodes', 'velmo_memory']:
+    try:
+        client.delete_collection(name)
+    except Exception:
+        pass
+"
+```
+
 Dans le Panneau B, lancer le CLI une première fois à blanc pour vérifier
 l'absence du warning SQLite :
 
@@ -535,6 +562,28 @@ DELETE FROM message_brut;
 DELETE FROM memory_users;
 DELETE FROM memory_episodes;
 DELETE FROM memory_facts;
+```
+
+Vider aussi les collections Chroma mémoire (voir l'avertissement de la
+Checklist pré-démo — sans ça, les épisodes/faits de cette session restent
+consultables la prochaine fois) :
+
+```bash
+uv run python -c "
+from dotenv import load_dotenv
+load_dotenv()
+import chromadb
+from chromadb.config import Settings
+client = chromadb.HttpClient(
+    host='localhost', port=8001,
+    settings=Settings(anonymized_telemetry=False),
+)
+for name in ['velmo_episodes', 'velmo_memory']:
+    try:
+        client.delete_collection(name)
+    except Exception:
+        pass
+"
 ```
 
 Fermer les Panneaux C et D (Ctrl+C sur chaque `tail -f`), puis dans un shell

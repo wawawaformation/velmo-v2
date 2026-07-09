@@ -132,9 +132,10 @@ def get_fact_store(session):
     try:
         import chromadb
         from chromadb.config import Settings
-        from chromadb.utils import embedding_functions
     except ImportError:
         return LocalFactStore(session)
+
+    from velmo.chroma_embedding import SilentSentenceTransformerEmbeddingFunction
 
     parsed = urlparse(chroma_url)
     host = parsed.hostname or "localhost"
@@ -148,7 +149,7 @@ def get_fact_store(session):
             chroma_telemetry_impl="velmo.chroma_telemetry.NoOpProductTelemetry",
         )
         client = chromadb.HttpClient(host=host, port=port, ssl=ssl, settings=settings)
-        embedder = embedding_functions.SentenceTransformerEmbeddingFunction(
+        embedder = SilentSentenceTransformerEmbeddingFunction(
             model_name=os.getenv("EMBEDDING_MODEL", "intfloat/multilingual-e5-small")
         )
         collection = client.get_or_create_collection("velmo_memory", embedding_function=embedder)

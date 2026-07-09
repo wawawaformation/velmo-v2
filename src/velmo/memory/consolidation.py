@@ -75,6 +75,14 @@ def consolidate(message: str, llm=None) -> ConsolidationResult:
     except json.JSONDecodeError:
         return _consolidate_with_rules(message)
 
+    episode = data.get("episode")
+    if not episode or not isinstance(episode, str):
+        # Réponse dégradée d'un petit modèle : JSON structurellement valide
+        # mais "episode" absent/null/vide — sans repli, l'insertion Postgres
+        # échoue (contenu NOT NULL) et le message reste bloqué indéfiniment
+        # dans message_brut.
+        return _consolidate_with_rules(message)
+
     semantic_data = data.get("semantic")
     semantic = None
     if semantic_data is not None and semantic_data.get("destination") in _VALID_DESTINATIONS:
@@ -84,4 +92,4 @@ def consolidate(message: str, llm=None) -> ConsolidationResult:
         if validator is None or validator(value):
             semantic = ClassificationResult(semantic_data["destination"], key, value)
 
-    return ConsolidationResult(episode=data["episode"], semantic=semantic)
+    return ConsolidationResult(episode=episode, semantic=semantic)
