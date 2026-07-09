@@ -68,6 +68,27 @@ def test_right_to_be_forgotten():
     assert "rue des Lilas" not in mm.read(user, "Mon adresse ?").render()
 
 
+def test_forget_removes_consolidated_episode_even_without_text_match():
+    # R5 : un épisode consolidé doit être purgé par sa clé de consolidation,
+    # pas seulement par correspondance textuelle — le texte nettoyé par le LLM
+    # ne contient pas forcément le mot cible ("pointure" n'apparaît nulle part).
+    from velmo.memory import episodic as episodic_module
+    from velmo.memory import semantic as semantic_module
+
+    mm = MemoryManager()
+    user = "acc-forget-consolidated-episode"
+    semantic_module.set_known_fact(mm._session, user, "pointure", "43")
+    episodic_module.add_episode(
+        mm._session, user, "Chausse du 43", consolidated_key="pointure"
+    )
+
+    removed = mm.forget(user, "pointure")
+
+    assert removed >= 1
+    remaining = episodic_module.list_episodes(mm._session, user, include_consolidated=True)
+    assert remaining == []
+
+
 def test_agent_injects_memory_context_into_llm_fallback():
     # Non-régression : Agent.respond() doit transmettre le contexte mémoire au
     # LLM pour toute question hors routage déterministe (sinon R1 est tenu par

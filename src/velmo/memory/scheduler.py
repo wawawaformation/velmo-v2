@@ -32,6 +32,7 @@ def start(*, interval_seconds: int = INTERVAL_SECONDS_DEFAULT) -> BackgroundSche
     scheduler = BackgroundScheduler()
 
     def _tick() -> None:
+        """Traite le tampon de tous les utilisateurs, appelé à chaque intervalle."""
         mm = MemoryManager()
         try:
             mm.run_pending_job_all_users()

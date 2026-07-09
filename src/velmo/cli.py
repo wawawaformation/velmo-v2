@@ -35,6 +35,12 @@ def main() -> None:
     args = parser.parse_args()
 
     agent = build_default_agent()
+    if agent.memory._session.get_bind().dialect.name != "postgresql":
+        print(
+            "ATTENTION : Postgres (DB_URL) injoignable au démarrage — la mémoire "
+            "utilise un repli SQLite local (.velmo_memory.db), pas la base "
+            "docker-compose. Vérifiez `docker compose ps postgres`."
+        )
     job = memory_scheduler.start()
     print(f"Velmo 2.0 prêt (client {args.user}). Posez votre question (Ctrl+C pour quitter).")
     try:

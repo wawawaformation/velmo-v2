@@ -8,11 +8,13 @@ en production, SQLite en mémoire pour les tests.
 from __future__ import annotations
 
 import enum
+import logging
 import os
 from datetime import datetime
 
 from sqlalchemy import (
     JSON,
+    Boolean,
     DateTime,
     Enum,
     ForeignKey,
@@ -21,6 +23,9 @@ from sqlalchemy import (
     create_engine,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, sessionmaker
+
+
+logger = logging.getLogger(__name__)
 
 
 class Base(DeclarativeBase):
@@ -192,13 +197,20 @@ class MessageBrut(Base):
 
 
 class MemoryEpisode(Base):
-    """Mémoire épisodique : événements nettoyés (léger), recherchables par mots-clés."""
+    """Mémoire épisodique : événements nettoyés (léger), recherchables par mots-clés.
+
+    Un épisode consolidé (`consolidated_key` renseignée) reste stocké comme trace
+    d'audit (R6) mais n'est plus la source de vérité pour la lecture — c'est le
+    fait sémantique dérivé (`memory_users`/`memory_facts`) qui l'est.
+    """
 
     __tablename__ = "memory_episodes"
     id_episode: Mapped[str] = mapped_column(String, primary_key=True)  # uuid
     user_id: Mapped[str] = mapped_column(String, index=True)
     contenu: Mapped[str] = mapped_column(String)
     date: Mapped[datetime] = mapped_column(DateTime, default=datetime(2024, 1, 1))
+    consolidated: Mapped[bool] = mapped_column(Boolean, default=False)
+    consolidated_key: Mapped[str | None] = mapped_column(String, nullable=True)
 
 
 class MemoryFact(Base):
@@ -252,6 +264,11 @@ def memory_session_factory():
                 engine = None
         if engine is None:
             db_path = os.getenv("VELMO_MEMORY_DB_PATH", ".velmo_memory.db")
+            logger.warning(
+                "DB_URL (%s) injoignable : repli sur SQLite local (%s). "
+                "Les écritures mémoire n'iront PAS dans Postgres.",
+                url, db_path,
+            )
             engine = create_engine(f"sqlite:///{db_path}", future=True)
         Base.metadata.create_all(engine)
         _MEMORY_ENGINE = engine

@@ -12,6 +12,7 @@ KNOWN_KEYS = ("pointure", "segment", "tutoiement", "langue", "canal_contact")
 
 
 def set_known_fact(session, user_id: str, key: str, value: str) -> None:
+    """Écrit une colonne connue de `MemoryUser`, créant la ligne si besoin."""
     if key not in KNOWN_KEYS:
         raise ValueError(f"clé inconnue: {key}")
     user = session.get(MemoryUser, user_id)
@@ -23,6 +24,7 @@ def set_known_fact(session, user_id: str, key: str, value: str) -> None:
 
 
 def get_known_facts(session, user_id: str) -> dict[str, str]:
+    """Renvoie les colonnes connues renseignées pour un utilisateur."""
     user = session.get(MemoryUser, user_id)
     if user is None:
         return {}

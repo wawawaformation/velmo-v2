@@ -8,9 +8,28 @@ connexions "idle in transaction" qui s'accumulent, scheduler qui se bloque).
 
 from __future__ import annotations
 
+from unittest.mock import patch
+
 from sqlalchemy import text
 
 from velmo.memory import MemoryManager
+from velmo.memory.episode_vector_store import LocalEpisodeStore
+
+
+def test_read_queries_episode_vector_store():
+    # read() doit interroger le vector store épisodique (en plus de
+    # search_episodes) pour bénéficier du tri par similarité de sens.
+    mm = MemoryManager()
+    user = "unit-read-episode-vector"
+
+    with patch.object(
+        LocalEpisodeStore, "search", return_value=["épisode trouvé via le vector store"]
+    ) as mock_search:
+        rendered = mm.read(user, "une requête").render()
+
+    mock_search.assert_called_once_with(user, "une requête")
+    assert "épisode trouvé via le vector store" in rendered
+    mm.close()
 
 
 def test_close_closes_the_underlying_session():

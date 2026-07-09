@@ -15,12 +15,14 @@ _HISTORY: dict[str, list[Turn]] = {}
 
 
 def append(user_id: str, role: str, content: str) -> None:
+    """Ajoute un tour au fil de l'utilisateur, en tronquant à `MAX_TURNS`."""
     turns = _HISTORY.setdefault(user_id, [])
     turns.append((role, content))
     del turns[:-MAX_TURNS]
 
 
 def get_turns(user_id: str) -> list[Turn]:
+    """Renvoie le fil court terme d'un utilisateur (copie de la fenêtre en RAM)."""
     return list(_HISTORY.get(user_id, []))
 
 

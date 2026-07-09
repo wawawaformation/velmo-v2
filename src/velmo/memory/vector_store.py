@@ -19,6 +19,7 @@ from velmo.db import MemoryFact
 
 
 def _tokens(text: str) -> set[str]:
+    """Normalise un texte en un ensemble de tokens (sans accents, courts exclus)."""
     stripped = "".join(
         c for c in unicodedata.normalize("NFD", text) if unicodedata.category(c) != "Mn"
     )
@@ -32,18 +33,21 @@ class LocalFactStore:
         self._session = session
 
     def add(self, user_id: str, key: str, value: str) -> None:
+        """Persiste un fait à clé imprévisible pour l'utilisateur."""
         self._session.add(
             MemoryFact(id=str(uuid.uuid4()), user_id=user_id, key=key, value=value)
         )
         self._session.commit()
 
     def all_facts(self, user_id: str) -> list[tuple[str, str]]:
+        """Renvoie tous les faits (clé, valeur) enregistrés pour l'utilisateur."""
         rows = self._session.execute(
             select(MemoryFact.key, MemoryFact.value).where(MemoryFact.user_id == user_id)
         ).all()
         return [(k, v) for k, v in rows]
 
     def search(self, user_id: str, query: str, k: int = 5) -> list[str]:
+        """Renvoie les `k` faits les plus proches de `query` (recouvrement de tokens)."""
         q_tokens = _tokens(query)
         facts = self.all_facts(user_id)
         if not q_tokens:
@@ -56,6 +60,7 @@ class LocalFactStore:
         return [v for score, v in scored[:k] if score > 0] or [v for _, v in facts[:k]]
 
     def delete_matching(self, user_id: str, target: str) -> int:
+        """Supprime les faits dont la clé ou la valeur correspond à `target` (R5)."""
         rows = self._session.execute(
             select(MemoryFact).where(MemoryFact.user_id == user_id)
         ).scalars().all()
@@ -77,6 +82,7 @@ class ChromaFactStore:
         self._collection = collection
 
     def add(self, user_id: str, key: str, value: str) -> None:
+        """Indexe un fait dans Chroma avec ses métadonnées `user_id`/`key`."""
         self._collection.add(
             ids=[str(uuid.uuid4())],
             documents=[value],
@@ -84,6 +90,7 @@ class ChromaFactStore:
         )
 
     def search(self, user_id: str, query: str, k: int = 5) -> list[str]:
+        """Renvoie les `k` faits les plus proches de `query` par similarité d'embeddings."""
         result = self._collection.query(
             query_texts=[query], n_results=k, where={"user_id": user_id}
         )
@@ -91,12 +98,14 @@ class ChromaFactStore:
         return list(docs)
 
     def all_facts(self, user_id: str) -> list[tuple[str, str]]:
+        """Renvoie tous les faits (clé, valeur) indexés pour l'utilisateur."""
         result = self._collection.get(where={"user_id": user_id})
         docs = result.get("documents", [])
         metas = result.get("metadatas", [])
         return [((meta or {}).get("key", ""), doc) for doc, meta in zip(docs, metas)]
 
     def delete_matching(self, user_id: str, target: str) -> int:
+        """Supprime les faits dont la clé ou le contenu correspond à `target` (R5)."""
         result = self._collection.get(where={"user_id": user_id})
         ids = result.get("ids", [])
         docs = result.get("documents", [])

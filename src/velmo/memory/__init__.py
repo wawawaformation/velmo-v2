@@ -23,6 +23,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from . import buffer, episodic, semantic, short_term, storage
+from .episode_vector_store import get_episode_store
 from .processor import process_pending
 from .vector_store import get_fact_store
 
@@ -62,9 +63,12 @@ class MemoryManager:
         store = get_fact_store(self._session)
         vector_hits = store.search(user_id, message)
 
-        episodes = episodic.search_episodes(self._session, user_id, message)
+        episode_store = get_episode_store(self._session)
+        episode_hits = episode_store.search(user_id, message)
 
-        return MemoryContext(history=history, facts=known_facts, episodic=vector_hits + episodes)
+        return MemoryContext(
+            history=history, facts=known_facts, episodic=vector_hits + episode_hits
+        )
 
     def write(self, user_id: str, user_message: str, assistant_message: str) -> None:
         """Met à jour la mémoire à partir d'un échange (capture synchrone uniquement).
@@ -111,6 +115,7 @@ class MemoryManager:
         store = get_fact_store(self._session)
         removed += store.delete_matching(user_id, target)
         removed += episodic.delete_matching(self._session, user_id, target)
+        removed += episodic.delete_by_consolidated_key(self._session, user_id, target)
         removed += buffer.delete_matching(self._session, user_id, target)
         return removed
 

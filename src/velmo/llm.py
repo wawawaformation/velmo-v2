@@ -9,6 +9,12 @@ from __future__ import annotations
 import os
 from typing import Protocol
 
+# Sans timeout explicite, le client Azure attend indéfiniment une réponse :
+# un appel réseau bloqué gèle alors le tick du scheduler (memory/scheduler.py)
+# et tous les ticks suivants sont skippés (max_instances=1), empilant les
+# messages dans `message_brut` sans jamais les traiter.
+LLM_TIMEOUT_SECONDS = 15
+
 
 class LLM(Protocol):
     """Interface minimale d'un client de complétion."""
@@ -64,6 +70,7 @@ def get_llm() -> LLM:
         endpoint=os.environ["AZURE_AI_INFERENCE_ENDPOINT"],
         credential=os.environ["AZURE_AI_INFERENCE_API_KEY"],
         model=os.environ.get("AZURE_AI_INFERENCE_MODEL", "Kimi-K2.6"),
+        timeout=LLM_TIMEOUT_SECONDS,
     )
     return LangChainAdapter(llm)
 
@@ -79,5 +86,6 @@ def get_classifier_llm() -> LLM:
         endpoint=os.environ["AZURE_AI_INFERENCE_ENDPOINT"],
         credential=os.environ["AZURE_AI_INFERENCE_API_KEY"],
         model=os.environ["AZURE_AI_CLASSIFIER_MODEL"],
+        timeout=LLM_TIMEOUT_SECONDS,
     )
     return LangChainAdapter(llm)

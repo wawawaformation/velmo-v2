@@ -25,6 +25,7 @@ _LANGUE_RE = re.compile(r"^[a-zàâäéèêëîïôöùûüç]{3,20}$", re.I)
 
 
 def _is_plausible_langue(value: str | None) -> bool:
+    """Vérifie qu'une valeur ressemble à un nom de langue (lettres uniquement)."""
     return bool(_LANGUE_RE.match((value or "").strip()))
 
 
@@ -41,6 +42,8 @@ _VALUE_VALIDATORS = {
 
 @dataclass
 class ClassificationResult:
+    """Résultat de classification d'un message : destination mémoire + fait distillé."""
+
     destination: Destination
     key: str | None = None
     value: str | None = None
@@ -79,6 +82,7 @@ Si aucun fait n'est trouvé, réponds exactement : []
 
 
 def _extract_known_column(message: str) -> ClassificationResult | None:
+    """Tente d'extraire une clé connue (pointure, segment...) par regex ; None sinon."""
     low = message.lower()
     if re.search(r"tu(?:toie|toyer|toies)", low):
         return ClassificationResult("semantic_column", "tutoiement", "tutoiement")

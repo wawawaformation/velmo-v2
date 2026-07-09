@@ -11,6 +11,7 @@ from velmo.db import MessageBrut
 
 
 def capture(session, user_id: str, role: str, content: str) -> None:
+    """Insère un message brut dans le tampon, en attente de classification."""
     session.add(
         MessageBrut(
             id=str(uuid.uuid4()),
@@ -24,6 +25,7 @@ def capture(session, user_id: str, role: str, content: str) -> None:
 
 
 def pending_for(session, user_id: str) -> list[MessageBrut]:
+    """Renvoie les messages non encore traités d'un utilisateur."""
     return list(
         session.execute(
             select(MessageBrut).where(MessageBrut.user_id == user_id)
@@ -38,6 +40,7 @@ def pending_user_ids(session) -> list[str]:
 
 
 def delete(session, rows: list[MessageBrut]) -> None:
+    """Supprime du tampon les lignes déjà routées vers le long terme."""
     for row in rows:
         session.delete(row)
     if rows:
