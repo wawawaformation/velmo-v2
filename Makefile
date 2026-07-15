@@ -1,7 +1,7 @@
-.PHONY: install up down migrate seed seed-kb chat eval ci test fmt lint typecheck
+.PHONY: install up down migrate seed seed-kb chat api eval ci test fmt lint typecheck
 
 install:
-	uv sync --extra llm --extra vector
+	uv sync --extra llm --extra vector --extra api
 
 up:
 	docker compose up -d
@@ -20,6 +20,9 @@ seed-kb:
 
 chat:
 	uv run python -m velmo.cli
+
+api:
+	uv run uvicorn velmo.api:app --reload
 
 eval:
 	uv run python -m velmo.mlops.score

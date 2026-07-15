@@ -26,6 +26,13 @@ llm = [
     "langchain-azure-ai>=1.0,<2.0",
     "azure-ai-inference>=1.0.0b9",
 ]
+# API REST (FastAPI) : couche HTTP au-dessus de Agent.respond(), destinée
+# au futur front Vue.js. httpx requis par fastapi.testclient (tests).
+api = [
+    "fastapi>=0.139.0",
+    "httpx>=0.28.1",
+    "uvicorn[standard]>=0.50.1",
+]
 
 [dependency-groups]
 dev = [

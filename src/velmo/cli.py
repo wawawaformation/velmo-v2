@@ -6,51 +6,13 @@ import argparse
 import logging
 import sys
 import threading
-from logging.handlers import RotatingFileHandler
-from pathlib import Path
 
 from dotenv import load_dotenv
 
 from .agent import build_default_agent
+from .logging_config import configure_logging
 from .memory import MemoryManager
 from .memory import scheduler as memory_scheduler
-
-LOG_FILE = Path(__file__).resolve().parents[2] / "logs" / "memory.log"
-LLM_LATENCY_LOG_FILE = Path(__file__).resolve().parents[2] / "logs" / "llm_latency.log"
-GUARDRAILS_LOG_FILE = Path(__file__).resolve().parents[2] / "logs" / "guardrails.log"
-
-
-def _configure_logging() -> None:
-    """Redirige les logs (scheduler mémoire, APScheduler) vers un fichier :
-    évite de polluer le prompt interactif du CLI (cf. bug #skipped: maximum
-    number of running instances). La latence des appels LLM part dans un
-    fichier dédié (pas de propagation vers le root logger)."""
-    LOG_FILE.parent.mkdir(exist_ok=True)
-    handler = logging.FileHandler(LOG_FILE, encoding="utf-8")
-    handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
-    root = logging.getLogger()
-    root.handlers.clear()
-    root.addHandler(handler)
-    root.setLevel(logging.INFO)
-
-    # Un appel LLM toutes les ~20s (tick scheduler) : rotation à 1 Mo, 3
-    # fichiers de sauvegarde conservés (llm_latency.log.1/.2/.3), pour éviter
-    # une croissance illimitée du fichier en usage prolongé.
-    latency_handler = RotatingFileHandler(
-        LLM_LATENCY_LOG_FILE, maxBytes=1_000_000, backupCount=3, encoding="utf-8"
-    )
-    latency_handler.setFormatter(logging.Formatter("%(asctime)s %(message)s"))
-    latency_logger = logging.getLogger("velmo.llm.latency")
-    latency_logger.addHandler(latency_handler)
-    latency_logger.setLevel(logging.INFO)
-    latency_logger.propagate = False
-
-    guardrails_handler = logging.FileHandler(GUARDRAILS_LOG_FILE, encoding="utf-8")
-    guardrails_handler.setFormatter(logging.Formatter("%(asctime)s %(message)s"))
-    guardrails_logger = logging.getLogger("velmo.guardrails.events")
-    guardrails_logger.addHandler(guardrails_handler)
-    guardrails_logger.setLevel(logging.INFO)
-    guardrails_logger.propagate = False
 
 
 def _preload_facts_in_background(user_id: str) -> None:
@@ -107,7 +69,7 @@ def _safe_respond(agent, user_id: str, message: str) -> str:
 
 def main() -> None:
     load_dotenv()
-    _configure_logging()
+    configure_logging()
     parser = argparse.ArgumentParser(description="Chat support Velmo 2.0")
     parser.add_argument("--user", default="C-marc-dubois", help="Identifiant client authentifié")
     args = parser.parse_args()

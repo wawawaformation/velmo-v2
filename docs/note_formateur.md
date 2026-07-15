@@ -21,7 +21,12 @@
 
 ## Scripts de présentation
 
-Deux scripts détaillés (démo live + schéma + code), rejoués et corrigés en conditions réelles contre les vrais services Azure :
+Trois scripts détaillés (démo live + schéma + code), rejoués et corrigés en conditions réelles contre les vrais services Azure :
 
 - `docs/script_presentation_demo_memoire.md` — capture/consolidation épisodique, faits à clé connue/imprévisible, log de latence, isolation par utilisateur, oubli contrôlé.
 - `docs/script_presentation_demo_guardrails.md` — cascade à 3 niveaux (règles → Content Safety → LLM), faux positif évité, sortie bloquée (PII), traçabilité, coupe-circuit.
+- `docs/script_presentation_demo_api.md` — API REST (FastAPI) avec Bruno : liste utilisateurs, message avec tool-calling réel, message bloqué par un garde-fou, validation 422.
+
+## Chantier 3 — API REST
+
+- **Première couche HTTP** au-dessus de `Agent.respond()` (`src/velmo/api.py`), en vue d'un futur front Vue.js : `POST /messages`, `GET /users` (référentiel `customers`, pas `memory_users`). Pas d'authentification réelle à ce stade (`user_id` en clair), décision actée pour ce POC. Scheduler mémoire démarré au `lifespan` FastAPI, session DB par requête. `_configure_logging()` extrait dans `logging_config.py`, partagé CLI/API. Testé avec Bruno et vérifié en conditions réelles (vrai Azure, vraie base).
