@@ -59,7 +59,7 @@ Détail de chaque méthode et de son rôle dans les exigences R1-R6 : voir les s
 
 ## 2. Capture synchrone vs traitement asynchrone
 
-**Schéma à l'écran pour cette partie** : [`conception/memoire/flux_reel.drawio`](../conception/memoire/flux_reel.drawio) (export [`flux_reel.png`](../conception/memoire/flux_reel.png)) — montre le flux complet `write()` → tampon → scheduler/tick → `process_pending` → classification → routage, avec la légende des écarts vs `choix.md` à jour (intervalle 20s, fenêtre glissante 30 tours, fix `shutdown(wait=True)`).
+**Schéma à l'écran pour cette partie** : [`conception/memoire/flux_reel.drawio`](../conception/memoire/flux_reel.drawio) — montre le flux complet `write()` → tampon → scheduler/tick → `process_pending` → classification → routage, avec la légende des écarts vs `choix.md` à jour (intervalle 20s, fenêtre glissante 30 tours, fix `shutdown(wait=True)`).
 
 - [`__init__.py:73` — `MemoryManager.write()`](../src/velmo/memory/__init__.py#L73)
   Capture pure : ajoute le tour en RAM (`short_term.append`) et dans le tampon DB (`buffer.capture`). **Aucun appel LLM**, latence quasi nulle.

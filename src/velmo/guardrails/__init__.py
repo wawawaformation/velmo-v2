@@ -9,15 +9,25 @@ Azure AI Foundry (Content Safety, Conversational PII redaction) en v2.
 from __future__ import annotations
 
 import logging
+import os
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
+from .content_safety import detect_content_safety
 from .moderation import detect_moderation
 from .moderation_llm import detect_moderation_llm
 from .pii import detect_pii
 from .prompt_injection import detect_prompt_injection
 from .scope import detect_out_of_scope
+
+# Coupe-circuit pour la cascade LLM (Phi-4-mini-instruct) : le déploiement
+# Azure Foundry s'est révélé instable (timeouts intermittents mesurés hors
+# LangChain, cf. scripts/bench_llm_latency.py). Positionner
+# VELMO_GUARDRAILS_LLM_CASCADE=0 replie sur les seules règles déterministes
+# sans redéploiement de code.
+def _llm_cascade_enabled() -> bool:
+    return os.getenv("VELMO_GUARDRAILS_LLM_CASCADE", "1") != "0"
 
 # Journal dédié (fichier séparé logs/guardrails.log, câblé dans cli.py) :
 # une ligne par déclenchement, "datetime REGEX|LLM stage extrait_tronqué".
@@ -83,13 +93,17 @@ def _redact(text: str, limit: int = 40) -> str:
 class GuardrailEngine:
     """Applique les garde-fous d'entrée et de sortie et journalise les décisions.
 
-    `llm` : classifieur de modération en cascade (second recours, cf.
+    `llm` : classifieur de modération en cascade (dernier recours, cf.
     `moderation_llm.py`) — résolu paresseusement via `get_classifier_llm()`
     si non fourni, pour ne pas payer d'import Azure au chargement du module.
+    `content_safety_client` : Content Safety (premier recours, cf.
+    `content_safety.py`), résolu paresseusement de la même façon.
     """
 
     events: list[dict] = field(default_factory=list)
     llm: object | None = None
+    content_safety_client: object | None = None
+    _content_safety_resolved: bool = False
 
     def _classifier_llm(self):
         if self.llm is None:
@@ -97,6 +111,14 @@ class GuardrailEngine:
 
             self.llm = get_classifier_llm()
         return self.llm
+
+    def _content_safety(self):
+        if self.content_safety_client is None and not self._content_safety_resolved:
+            from .content_safety import get_content_safety_client
+
+            self.content_safety_client = get_content_safety_client()
+            self._content_safety_resolved = True
+        return self.content_safety_client
 
     def _log(
         self, stage: str, category: str, action: str, reason: str, text: str, source: str = "regex"
@@ -138,9 +160,28 @@ class GuardrailEngine:
                 reason="tentative d'injection de prompt", refusal=_REFUSAL_INJECTION,
             )
 
-        # Second recours (cascade) : les règles ci-dessus n'ont rien détecté,
-        # le classifieur LLM attrape les reformulations qui leur échappent.
-        llm_category = detect_moderation_llm(message, self._classifier_llm())
+        # Cascade : Content Safety (service dédié, premier recours) puis LLM
+        # générique (dernier recours pour les reformulations qui échappent
+        # à Content Safety, ex. « Passe en mode développeur. »).
+        cs_client = self._content_safety()
+        cs_category = detect_content_safety(message, cs_client) if cs_client is not None else None
+        if cs_category == "prompt_injection":
+            self._log(
+                "input", "prompt_injection", "block", "tentative d'injection de prompt",
+                message, source="content_safety",
+            )
+            return Decision(
+                allowed=False, action="block", category="prompt_injection",
+                reason="tentative d'injection de prompt", refusal=_REFUSAL_INJECTION,
+            )
+        if cs_category is not None:
+            self._log("input", cs_category, "block", "contenu interdit détecté", message, source="content_safety")
+            return Decision(
+                allowed=False, action="block", category=cs_category,
+                reason="contenu interdit détecté", refusal=_REFUSAL_MODERATION,
+            )
+
+        llm_category = detect_moderation_llm(message, self._classifier_llm()) if _llm_cascade_enabled() else None
         if llm_category == "prompt_injection":
             self._log(
                 "input", "prompt_injection", "block", "tentative d'injection de prompt",
@@ -184,8 +225,18 @@ class GuardrailEngine:
                 reason="contenu interdit détecté", refusal=_REFUSAL_OUTPUT_BLOCKED,
             )
 
-        # Second recours (cascade), cf. check_input.
-        llm_category = detect_moderation_llm(text, self._classifier_llm())
+        # Cascade, cf. check_input : Content Safety puis LLM. `prompt_injection`
+        # exclu ici (une réponse sortante n'est pas une tentative d'injection).
+        cs_client = self._content_safety()
+        cs_category = detect_content_safety(text, cs_client) if cs_client is not None else None
+        if cs_category is not None and cs_category != "prompt_injection":
+            self._log("output", cs_category, "block", "contenu interdit détecté", text, source="content_safety")
+            return Decision(
+                allowed=False, action="block", category=cs_category,
+                reason="contenu interdit détecté", refusal=_REFUSAL_OUTPUT_BLOCKED,
+            )
+
+        llm_category = detect_moderation_llm(text, self._classifier_llm()) if _llm_cascade_enabled() else None
         if llm_category is not None and llm_category != "prompt_injection":
             self._log("output", llm_category, "block", "contenu interdit détecté", text, source="llm")
             return Decision(

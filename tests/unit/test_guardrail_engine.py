@@ -99,6 +99,85 @@ def test_check_input_llm_cascade_not_triggered_when_rules_already_matched():
     assert decision.category == "hate"
 
 
+class FakeContentSafety:
+    """Client Content Safety factice — court-circuite le vrai appel réseau."""
+
+    def __init__(self, category: str | None) -> None:
+        self.category = category
+
+
+def test_check_input_blocks_via_content_safety_before_llm(monkeypatch):
+    # Content Safety est le premier recours de la cascade (rapide, fiable),
+    # avant le LLM générique — cf. docs/rapport_latence_azure_foundry.md.
+    called_llm = []
+    engine = GuardrailEngine(llm=FakeLLM('{"category": null}'), content_safety_client=FakeContentSafety("violence"))
+    engine._classifier_llm = lambda: called_llm.append(True) or FakeLLM('{"category": null}')
+    monkeypatch.setattr(
+        "velmo.guardrails.detect_content_safety", lambda text, client: client.category,
+    )
+
+    decision = engine.check_input("Je vais vous frapper tous.")
+
+    assert decision.action == "block"
+    assert decision.category == "violence"
+    assert engine.events[0]["source"] == "content_safety"
+    assert called_llm == []
+
+
+def test_check_input_falls_back_to_llm_when_content_safety_finds_nothing(monkeypatch):
+    engine = GuardrailEngine(llm=FakeLLM('{"category": "violence"}'), content_safety_client=FakeContentSafety(None))
+    monkeypatch.setattr(
+        "velmo.guardrails.detect_content_safety", lambda text, client: client.category,
+    )
+
+    decision = engine.check_input("Je vais vous frapper tous.")
+
+    assert decision.action == "block"
+    assert decision.category == "violence"
+    assert engine.events[0]["source"] == "llm"
+
+
+def test_check_input_skips_llm_cascade_when_disabled_by_env(monkeypatch):
+    # Coupe-circuit : si le classifieur LLM (Phi-4-mini-instruct) devient
+    # instable/indisponible côté Azure Foundry, VELMO_GUARDRAILS_LLM_CASCADE=0
+    # permet de retomber sur les seules règles déterministes, sans redéployer.
+    monkeypatch.setenv("VELMO_GUARDRAILS_LLM_CASCADE", "0")
+    called = []
+    engine = GuardrailEngine(llm=FakeLLM('{"category": "violence"}'))
+    engine._classifier_llm = lambda: called.append(True) or FakeLLM('{"category": "violence"}')
+
+    decision = engine.check_input("Je vais vous frapper tous.")
+
+    assert decision.action == "allow"
+    assert called == []
+
+
+def test_check_output_blocks_via_content_safety_before_llm(monkeypatch):
+    engine = GuardrailEngine(llm=FakeLLM('{"category": null}'), content_safety_client=FakeContentSafety("violence"))
+    monkeypatch.setattr(
+        "velmo.guardrails.detect_content_safety", lambda text, client: client.category,
+    )
+
+    decision = engine.check_output("Contenu violent généré par erreur.")
+
+    assert decision.action == "block"
+    assert decision.category == "violence"
+    assert engine.events[0]["source"] == "content_safety"
+
+
+def test_check_output_ignores_prompt_injection_category_from_content_safety(monkeypatch):
+    # Une réponse sortante n'est pas une tentative d'injection — même filtre
+    # que pour le LLM (cf. check_output existant).
+    engine = GuardrailEngine(llm=FakeLLM('{"category": null}'), content_safety_client=FakeContentSafety("prompt_injection"))
+    monkeypatch.setattr(
+        "velmo.guardrails.detect_content_safety", lambda text, client: client.category,
+    )
+
+    decision = engine.check_output("Une réponse quelconque.")
+
+    assert decision.action == "allow"
+
+
 def test_check_output_blocks_out_of_scope_drift():
     # synthese.md : le hors-périmètre doit être contrôlé en entrée ET en
     # sortie — le LLM peut dériver spontanément vers un sujet hors périmètre

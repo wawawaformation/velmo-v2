@@ -491,7 +491,7 @@ SELECT contenu FROM memory_episodes WHERE user_id = 'C-marc-dubois';
 
 ## Partie 2 — Schéma (2-3 min)
 
-Support : [`conception/memoire/flux_reel.png`](../conception/memoire/flux_reel.png)
+Support : [`conception/memoire/flux_reel.drawio`](../conception/memoire/flux_reel.drawio)
 à l'écran.
 
 Dire : *"Ce qu'on vient de voir en direct correspond à ce flux."* Dérouler le
