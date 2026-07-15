@@ -9,8 +9,10 @@ complète de tool-calling).
 
 from __future__ import annotations
 
+from typing import TypeVar
+
 from langchain.agents.middleware import AgentMiddleware, hook_config
-from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 
 from . import GuardrailEngine
 
@@ -19,12 +21,22 @@ DEFAULT_REFUSAL = (
     "pour vos commandes, livraisons, retours et la FAQ Velmo."
 )
 
+_M = TypeVar("_M", bound=BaseMessage)
 
-def _last_message_of_type(messages, message_type):
+
+def _last_message_of_type(messages: list[BaseMessage], message_type: type[_M]) -> _M | None:
     for message in reversed(messages):
         if isinstance(message, message_type):
             return message
     return None
+
+
+def _text_content(message: BaseMessage) -> str:
+    """Contenu textuel d'un message — toujours `str` dans ce projet (pas de
+    multimodal), mais `BaseMessage.content` est typé `str | list` chez
+    LangChain (support des blocs multimodaux d'autres providers)."""
+    content = message.content
+    return content if isinstance(content, str) else str(content)
 
 
 class GuardrailMiddleware(AgentMiddleware):
@@ -44,7 +56,9 @@ class GuardrailMiddleware(AgentMiddleware):
     @hook_config(can_jump_to=["end"])
     def before_agent(self, state, runtime):
         message = _last_message_of_type(state["messages"], HumanMessage)
-        decision = self.engine.check_input(message.content)
+        if message is None:
+            return None
+        decision = self.engine.check_input(_text_content(message))
         if not decision.allowed:
             self._blocked_input_this_turn = True
             refusal = decision.refusal or DEFAULT_REFUSAL
@@ -55,7 +69,9 @@ class GuardrailMiddleware(AgentMiddleware):
         if self._blocked_input_this_turn:
             return None
         last_ai = _last_message_of_type(state["messages"], AIMessage)
-        decision = self.engine.check_output(last_ai.content)
+        if last_ai is None:
+            return None
+        decision = self.engine.check_output(_text_content(last_ai))
         if not decision.allowed:
             refusal = decision.refusal or DEFAULT_REFUSAL
             return {"messages": [AIMessage(refusal, id=last_ai.id)]}
