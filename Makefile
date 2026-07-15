@@ -1,4 +1,4 @@
-.PHONY: install up down migrate seed seed-kb chat api eval ci test fmt lint typecheck
+.PHONY: install up down migrate seed seed-kb chat api frontend-install frontend eval ci test fmt lint typecheck
 
 install:
 	uv sync --extra llm --extra vector --extra api
@@ -23,6 +23,14 @@ chat:
 
 api:
 	uv run uvicorn velmo.api:app --reload
+
+frontend-install:
+	cd frontend && npm install
+
+# Nécessite l'API lancée en parallèle (make api) — le dev server Vite
+# relaie /api/... vers http://localhost:8000 (vite.config.js).
+frontend:
+	cd frontend && npm run dev
 
 eval:
 	uv run python -m velmo.mlops.score

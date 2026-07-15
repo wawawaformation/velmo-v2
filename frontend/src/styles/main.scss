@@ -1,0 +1,26 @@
+@use "tokens";
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  // Footer collé en bas même sur une page peu remplie (AppFooter a
+  // margin-top: auto).
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
