@@ -45,6 +45,7 @@ Velmo 2.0 doit traiter automatiquement les demandes simples de support, tout en 
 | ① Haine / discrimination / harcèlement | Entrée + Sortie | Classifieur de modération | Bloquer, refus poli, journaliser |
 | Violence / menaces | Entrée + Sortie | Classifieur de modération | Bloquer, refus poli, journaliser |
 | Contenu sexuel / NSFW | Entrée + Sortie | Classifieur de modération | Bloquer, refus poli, journaliser |
+| Automutilation (self_harm) | Entrée + Sortie | Classifieur de modération | Rediriger vers une aide réelle (3114), journaliser — **pas** un simple refus |
 | ② Injection de prompt | Entrée | Règles (motifs) + classifieur | Neutraliser, ne jamais obéir, journaliser |
 | ③ Hors périmètre (médical, juridique) | Sortie (et entrée si détectable) | Vérification de périmètre (LLM léger) | Refuser poliment, rediriger, journaliser |
 | ④ PII / secrets internes | Entrée + Sortie | Azure Language — Conversational PII redaction | Rédiger automatiquement, journaliser (extrait non recopié) |

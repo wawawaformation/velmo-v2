@@ -33,17 +33,27 @@ class GuardrailMiddleware(AgentMiddleware):
     def __init__(self, engine: GuardrailEngine) -> None:
         super().__init__()
         self.engine = engine
+        # Un refus généré par before_agent (ex. « propos à caractère haineux
+        # détecté ») peut lui-même être reclassifié comme contenu interdit
+        # par check_output (le libellé de catégorie contient le mot-clé qui
+        # a servi à le détecter) — after_agent ne doit jamais re-vérifier un
+        # message qui est déjà le refus produit ce tour-ci, sans quoi le
+        # second blocage écrase le premier par un message incohérent.
+        self._blocked_input_this_turn = False
 
     @hook_config(can_jump_to=["end"])
     def before_agent(self, state, runtime):
         message = _last_message_of_type(state["messages"], HumanMessage)
         decision = self.engine.check_input(message.content)
         if not decision.allowed:
+            self._blocked_input_this_turn = True
             refusal = decision.refusal or DEFAULT_REFUSAL
             return {"messages": [AIMessage(refusal)], "jump_to": "end"}
         return None
 
     def after_agent(self, state, runtime):
+        if self._blocked_input_this_turn:
+            return None
         last_ai = _last_message_of_type(state["messages"], AIMessage)
         decision = self.engine.check_output(last_ai.content)
         if not decision.allowed:

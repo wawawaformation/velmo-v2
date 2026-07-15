@@ -28,8 +28,7 @@ _CATEGORY_MAP = {
     "Hate": "hate",
     "Violence": "violence",
     "Sexual": "sexual",
-    # SelfHarm n'a pas d'équivalent dans les catégories Velmo actuelles
-    # (cf. `guardrails/__init__.py::CATEGORIES`) — ignoré, pas de mapping.
+    "SelfHarm": "self_harm",
 }
 
 

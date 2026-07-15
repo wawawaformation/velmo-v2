@@ -19,7 +19,6 @@ _HATE_PATTERNS = [
 _VIOLENCE_PATTERNS = [
     r"\bje\s+vais\s+(?:te\s+)?(?:frapper|tuer|tabasser|cogner)",
     r"\bc'est\s+une\s+menace\b",
-    r"\bcomment\s+me\s+faire\s+du\s+mal\b",
 ]
 
 _SEXUAL_PATTERNS = [
@@ -27,10 +26,20 @@ _SEXUAL_PATTERNS = [
     r"scene?\s+de\s+nudite",
 ]
 
+# Distinct de violence (menace envers autrui) : intention de se faire du mal
+# à soi-même — déclenche une redirection d'aide (numéro 3114), pas un simple
+# refus, cf. GuardrailEngine._refusal_self_harm.
+_SELF_HARM_PATTERNS = [
+    r"\bcomment\s+me\s+faire\s+du\s+mal\b",
+    r"\bme\s+suicider\b",
+    r"\bmettre\s+fin\s+(?:à\s+mes\s+jours|a\s+mes\s+jours)\b",
+]
+
 _CATEGORY_PATTERNS = {
     "hate": _HATE_PATTERNS,
     "violence": _VIOLENCE_PATTERNS,
     "sexual": _SEXUAL_PATTERNS,
+    "self_harm": _SELF_HARM_PATTERNS,
 }
 
 

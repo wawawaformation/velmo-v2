@@ -38,22 +38,57 @@ CATEGORIES = (
     "hate",
     "violence",
     "sexual",
+    "self_harm",
     "pii",
     "out_of_scope",
     "prompt_injection",
     "secret_leak",
 )
 
-_REFUSAL_MODERATION = (
-    "Je ne peux pas donner suite à ce message. Je reste à votre disposition "
-    "pour vos commandes, livraisons, retours et la FAQ Velmo."
+# Libellés humains par catégorie — explicites dans le message de refus pour
+# que l'utilisateur (et en formation/démo, le développeur) comprenne POURQUOI
+# un message est bloqué, plutôt qu'un refus opaque. Reste neutre et factuel
+# (décrit le contenu détecté, pas la personne).
+_CATEGORY_LABELS = {
+    "hate": "propos à caractère haineux",
+    "violence": "menace ou contenu violent",
+    "sexual": "contenu à caractère sexuel",
+    "out_of_scope": "hors périmètre",
+    "prompt_injection": "tentative de contournement des instructions",
+    "pii": "donnée sensible",
+    "secret_leak": "donnée sensible",
+}
+
+# self_harm (intention de se faire du mal à soi-même) n'a pas un simple
+# refus : redirection vers une ressource d'aide réelle, le 3114, numéro
+# national de prévention du suicide (gratuit, 24h/24, 7j/7 — cf. 3114.fr).
+_REFUSAL_SELF_HARM = (
+    "Je ne suis pas en mesure de vous aider sur ce sujet, mais votre sécurité "
+    "compte. Le 3114, numéro national de prévention du suicide, est gratuit "
+    "et disponible 24h/24 et 7j/7 pour vous écouter et vous accompagner. "
+    "Je reste par ailleurs à votre disposition pour toute question sur vos "
+    "commandes Velmo."
 )
+
+
+def _refusal_moderation(category: str) -> str:
+    if category == "self_harm":
+        return _REFUSAL_SELF_HARM
+    label = _CATEGORY_LABELS.get(category, "contenu interdit")
+    return (
+        f"Je ne peux pas donner suite à ce message ({label} détecté). Je "
+        "reste à votre disposition pour vos commandes, livraisons, retours "
+        "et la FAQ Velmo."
+    )
+
+
 _REFUSAL_INJECTION = (
-    "Je ne peux pas suivre cette instruction. Je reste à votre disposition "
-    "pour vos commandes, livraisons, retours et la FAQ Velmo."
+    "Je ne peux pas suivre cette instruction (tentative de contournement "
+    "des instructions détectée). Je reste à votre disposition pour vos "
+    "commandes, livraisons, retours et la FAQ Velmo."
 )
 _REFUSAL_OUT_OF_SCOPE = (
-    "Cette demande sort du périmètre du support Velmo (maillots collector, "
+    "Cette demande est hors périmètre du support Velmo (maillots collector, "
     "commandes, retours). Je ne peux pas y répondre, mais je reste à votre "
     "disposition pour toute question sur vos commandes ou nos produits."
 )
@@ -156,7 +191,7 @@ class GuardrailEngine:
             self._log("input", category, "block", "contenu interdit détecté", message)
             return Decision(
                 allowed=False, action="block", category=category,
-                reason="contenu interdit détecté", refusal=_REFUSAL_MODERATION,
+                reason="contenu interdit détecté", refusal=_refusal_moderation(category),
             )
 
         if detect_prompt_injection(message):
@@ -184,7 +219,7 @@ class GuardrailEngine:
             self._log("input", cs_category, "block", "contenu interdit détecté", message, source="content_safety")
             return Decision(
                 allowed=False, action="block", category=cs_category,
-                reason="contenu interdit détecté", refusal=_REFUSAL_MODERATION,
+                reason="contenu interdit détecté", refusal=_refusal_moderation(cs_category),
             )
 
         llm_category = detect_moderation_llm(message, self._classifier_llm()) if _llm_cascade_enabled() else None
@@ -201,7 +236,7 @@ class GuardrailEngine:
             self._log("input", llm_category, "block", "contenu interdit détecté", message, source="llm")
             return Decision(
                 allowed=False, action="block", category=llm_category,
-                reason="contenu interdit détecté", refusal=_REFUSAL_MODERATION,
+                reason="contenu interdit détecté", refusal=_refusal_moderation(llm_category),
             )
 
         if detect_out_of_scope(message):

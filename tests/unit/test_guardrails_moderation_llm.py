@@ -40,6 +40,14 @@ def test_detects_violence_category_from_llm_response():
     assert result == "violence"
 
 
+def test_detects_self_harm_category_from_llm_response():
+    llm = FakeLLM('{"category": "self_harm"}')
+
+    result = detect_moderation_llm("Je veux me faire du mal ce soir.", llm=llm)
+
+    assert result == "self_harm"
+
+
 def test_returns_none_when_llm_says_none():
     llm = FakeLLM('{"category": null}')
 

@@ -19,6 +19,16 @@ def _runtime():
     return Runtime()
 
 
+class FakeLLM:
+    """LLM factice renvoyant une réponse fixe (contrôlée par le test)."""
+
+    def __init__(self, response: str) -> None:
+        self.response = response
+
+    def invoke(self, system: str, context: str, message: str) -> str:
+        return self.response
+
+
 def test_before_agent_short_circuits_on_blocked_input():
     middleware = GuardrailMiddleware(GuardrailEngine())
     state = {"messages": [HumanMessage("Sale race, retournez dans votre pays avec vos maillots.")]}
@@ -69,6 +79,32 @@ def test_after_agent_allows_legitimate_output():
     result = middleware.after_agent(state, _runtime())
 
     assert result is None
+
+
+def test_after_agent_does_not_reverify_a_refusal_from_before_agent():
+    # Bug réel : le message de refus explicite nomme la catégorie détectée
+    # (ex. « propos à caractère haineux détecté ») — ce texte peut lui-même
+    # être reclassifié par check_output() (cascade LLM, ici forcée via
+    # FakeLLM pour reproduire le cas sans dépendre du vrai service),
+    # écrasant le refus correct par un second message incohérent.
+    # after_agent ne doit jamais re-vérifier un message déjà produit par
+    # before_agent (même tour).
+    engine = GuardrailEngine(llm=FakeLLM('{"category": "hate"}'))
+    middleware = GuardrailMiddleware(engine)
+    input_state = {"messages": [HumanMessage("Sale race, retournez dans votre pays avec vos maillots.")]}
+
+    before_result = middleware.before_agent(input_state, _runtime())
+    refusal_message = before_result["messages"][0]
+
+    after_state = {
+        "messages": [
+            HumanMessage("Sale race, retournez dans votre pays avec vos maillots."),
+            refusal_message,
+        ]
+    }
+    after_result = middleware.after_agent(after_state, _runtime())
+
+    assert after_result is None
 
 
 def test_blocked_input_is_logged_in_engine_events():

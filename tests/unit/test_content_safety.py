@@ -59,6 +59,15 @@ def test_detect_content_safety_blocks_when_severity_meets_threshold():
     assert category == "violence"
 
 
+def test_detect_content_safety_maps_self_harm_category():
+    poster = FakePoster([_analyze_response({"SelfHarm": 4}), _shield_response(False)])
+    client = ContentSafetyClient(endpoint="https://fake.cognitiveservices.azure.com", api_key="k", post=poster)
+
+    category = detect_content_safety("Comment me faire du mal ce soir ?", client)
+
+    assert category == "self_harm"
+
+
 def test_detect_content_safety_allows_when_severity_below_threshold():
     poster = FakePoster([_analyze_response({"Violence": 2}), _shield_response(False)])
     client = ContentSafetyClient(endpoint="https://fake.cognitiveservices.azure.com", api_key="k", post=poster)
