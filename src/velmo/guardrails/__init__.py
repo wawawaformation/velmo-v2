@@ -125,7 +125,13 @@ class GuardrailEngine:
     ) -> None:
         # PII/secret_leak : jamais la donnée brute, même tronquée — un secret court
         # situé en début de message survivrait à une troncature à 40 caractères.
-        if category in _SENSITIVE_CATEGORIES:
+        # Vérifié sur le texte lui-même (`detect_pii`), pas seulement sur la
+        # `category` du blocage : un message contenant un secret peut être
+        # bloqué pour une AUTRE catégorie (ex. prompt_injection, si le LLM le
+        # classifie ainsi) — la garantie de non-fuite ne doit pas dépendre de
+        # la raison du blocage (bug réel découvert en rejouant
+        # docs/script_presentation_demo_guardrails.md).
+        if category in _SENSITIVE_CATEGORIES or detect_pii(text) is not None:
             excerpt_redacted = _redact(_SENSITIVE_PLACEHOLDER)
         else:
             excerpt_redacted = _redact(text)

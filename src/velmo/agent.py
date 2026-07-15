@@ -14,6 +14,7 @@ from langchain_core.messages import HumanMessage
 
 from .guardrails import GuardrailEngine
 from .guardrails.middleware import GuardrailMiddleware
+from .llm import LatencyCallbackHandler
 from .memory import MemoryManager
 from .memory.middleware import MemoryMiddleware
 from .tools.binding import bound_tools
@@ -56,7 +57,10 @@ class Agent:
                 MemoryMiddleware(self.memory, user_id),
             ],
         )
-        result = graph.invoke({"messages": [HumanMessage(message)]})
+        result = graph.invoke(
+            {"messages": [HumanMessage(message)]},
+            config={"callbacks": [LatencyCallbackHandler()]},
+        )
         return result["messages"][-1].content
 
 

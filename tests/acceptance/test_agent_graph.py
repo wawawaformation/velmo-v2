@@ -63,6 +63,23 @@ def test_tool_call_executes_against_real_db():
     assert reply == "Votre commande O-2024-0101 est au statut préparée."
 
 
+def test_respond_logs_latency_for_the_chat_model(caplog):
+    # Bug réel observé en rejouant docs/script_presentation_demo_memoire.md
+    # (Démo 3) : depuis la migration vers create_agent(), le modèle de chat
+    # principal (get_chat_model(), BaseChatModel brut) n'était plus enveloppé
+    # par LangChainAdapter — sa latence disparaissait de logs/llm_latency.log.
+    import logging
+
+    model = ScriptedToolCallingModel(responses=[AIMessage("Bonjour !")])
+    agent = _build_agent(model)
+
+    with caplog.at_level(logging.INFO, logger="velmo.llm.latency"):
+        agent.respond("C-marc-dubois", "Bonjour")
+
+    records = [r for r in caplog.records if r.name == "velmo.llm.latency"]
+    assert len(records) == 1
+
+
 def test_blocked_input_never_invokes_the_model():
     model = ScriptedToolCallingModel(responses=[AIMessage("ne devrait jamais être renvoyé")])
     agent = _build_agent(model)

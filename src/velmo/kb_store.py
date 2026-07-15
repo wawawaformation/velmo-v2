@@ -82,7 +82,8 @@ def get_kb():
     try:
         import chromadb
         from chromadb.config import Settings
-        from chromadb.utils import embedding_functions
+
+        from velmo.chroma_embedding import SilentSentenceTransformerEmbeddingFunction
     except ImportError:
         return LocalKB()
 
@@ -103,7 +104,7 @@ def get_kb():
             ssl=ssl,
             settings=settings,
         )
-        embedder = embedding_functions.SentenceTransformerEmbeddingFunction(
+        embedder = SilentSentenceTransformerEmbeddingFunction(
             model_name=os.getenv("EMBEDDING_MODEL", "intfloat/multilingual-e5-small")
         )
         collection = client.get_or_create_collection("velmo_faq", embedding_function=embedder)

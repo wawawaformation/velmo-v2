@@ -11,6 +11,8 @@ import time
 from logging import getLogger
 from typing import Protocol
 
+from langchain_core.callbacks import BaseCallbackHandler
+
 # Sans timeout explicite, le client Azure attend indéfiniment une réponse :
 # un appel réseau bloqué gèle alors le tick du scheduler (memory/scheduler.py)
 # et tous les ticks suivants sont skippés (max_instances=1), empilant les
@@ -19,8 +21,40 @@ LLM_TIMEOUT_SECONDS = 15
 
 # Logger dédié (fichier séparé logs/llm_latency.log, câblé dans cli.py) :
 # couvre tout appel LLM, chat principal comme classification/consolidation
-# mémoire, puisque les deux passent par LangChainAdapter.invoke().
+# mémoire — via LangChainAdapter.invoke() (classifieur) ou
+# LatencyCallbackHandler (chat principal, create_agent()).
 _latency_logger = getLogger("velmo.llm.latency")
+
+
+class LatencyCallbackHandler(BaseCallbackHandler):
+    """Callback LangChain journalisant la latence des appels modèle.
+
+    Nécessaire car `get_chat_model()` renvoie un `BaseChatModel` brut (exigé
+    par `create_agent()`), non enveloppé par `LangChainAdapter` — sans ce
+    callback, la latence du chat principal n'est plus journalisée depuis la
+    migration vers `create_agent()`/`AgentMiddleware` (bug réel observé en
+    rejouant `docs/script_presentation_demo_memoire.md`, Démo 3 : seul le
+    classifieur, encore via `LangChainAdapter`, apparaissait dans le log).
+    """
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._starts: dict = {}
+
+    def on_chat_model_start(self, serialized, messages, *, run_id, **kwargs) -> None:
+        model_name = serialized.get("kwargs", {}).get("model_name", "unknown")
+        self._starts[run_id] = (model_name, time.monotonic())
+
+    def on_llm_end(self, response, *, run_id, **kwargs) -> None:
+        start = self._starts.pop(run_id, None)
+        if start is None:
+            return
+        model_name, start_time = start
+        latency_ms = (time.monotonic() - start_time) * 1000
+        _latency_logger.info(
+            "model=%s latency_ms=%.1f", model_name, latency_ms,
+            extra={"latency_ms": latency_ms},
+        )
 
 
 class LLM(Protocol):

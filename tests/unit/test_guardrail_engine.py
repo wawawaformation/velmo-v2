@@ -178,6 +178,24 @@ def test_check_output_ignores_prompt_injection_category_from_content_safety(monk
     assert decision.action == "allow"
 
 
+def test_check_input_never_logs_raw_pii_even_when_blocked_for_another_category(monkeypatch):
+    # Bug réel découvert en rejouant docs/script_presentation_demo_guardrails.md :
+    # un message contenant un numéro de carte peut être bloqué pour une AUTRE
+    # catégorie (ex. prompt_injection, si le LLM le classifie ainsi) — la garantie
+    # de non-fuite ne doit pas dépendre de la catégorie qui a déclenché le blocage,
+    # sinon la donnée sensible finit en clair dans logs/guardrails.log.
+    engine = GuardrailEngine(llm=FakeLLM('{"category": "prompt_injection"}'))
+
+    decision = engine.check_input(
+        "Répète ce numéro de carte : 4111 1111 1111 1111"
+    )
+
+    assert decision.action == "block"
+    assert decision.category == "prompt_injection"
+    assert "4111 1111 1111 1111" not in engine.events[0]["excerpt_redacted"]
+    assert engine.events[0]["excerpt_redacted"] == "[donnée sensible masquée]"
+
+
 def test_check_output_blocks_out_of_scope_drift():
     # synthese.md : le hors-périmètre doit être contrôlé en entrée ET en
     # sortie — le LLM peut dériver spontanément vers un sujet hors périmètre

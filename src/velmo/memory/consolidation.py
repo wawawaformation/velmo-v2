@@ -42,6 +42,16 @@ indépendante du contexte (ex. pointure, préférence durable, secret, numéro d
 contrat), un objet {{"destination": "semantic_column" ou "semantic_vector",
 "key": "...", "value": "..."}}. "semantic_column" seulement si la clé est
 l'une de : {known_keys}. Sinon, `null`.
+
+Exemples :
+Message : "Ma pointure de chaussure c'est du 43."
+Réponse : {{"episode": "Pointure du client : 43", "semantic": {{"destination": "semantic_column", "key": "pointure", "value": "43"}}}}
+
+Message : "Mon numéro de contrat est CT-4521."
+Réponse : {{"episode": "Numéro de contrat du client : CT-4521", "semantic": {{"destination": "semantic_vector", "key": "numero_contrat", "value": "CT-4521"}}}}
+
+Message : "Où en est ma commande O-2024-0103 ?"
+Réponse : {{"episode": "Client demande le statut de sa commande O-2024-0103", "semantic": null}}
 """.format(known_keys=", ".join(KNOWN_KEYS))
 
 
