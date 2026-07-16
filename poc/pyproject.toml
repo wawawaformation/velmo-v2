@@ -1,0 +1,12 @@
+[project]
+name = "langfuse-poc"
+version = "0.1.0"
+description = "POC LangFuse minimal"
+requires-python = ">=3.11"
+dependencies = [
+    "flask>=3.0.0",
+    "langfuse>=3.1.0",
+    "langchain>=0.1.0",
+    "langchain-azure-ai>=0.1.0",
+    "python-dotenv>=1.0.0",
+]
