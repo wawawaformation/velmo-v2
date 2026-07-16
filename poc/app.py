@@ -8,6 +8,7 @@ import os
 from flask import Flask, request, jsonify
 from dotenv import load_dotenv
 from langfuse import Langfuse
+from langfuse.types import TraceContext
 from langchain_azure_ai.chat_models import AzureAIOpenAIApiChatModel
 from langchain_core.messages import HumanMessage
 
@@ -18,10 +19,10 @@ load_dotenv()
 # ==============================================================================
 # Langfuse Cloud = service d'observabilité pour LLM applications.
 # On crée une instance avec nos clés (public + secret).
-# Cette instance nous permet de créer des traces manuellement.
+# Cette instance nous permet de créer des events et des spans.
 #
 # Une trace est juste un conteneur : elle a un nom, des inputs, des outputs.
-# À l'intérieur, on peut logger des "generations" (appels LLM) et d'autres events.
+# À l'intérieur, on peut logger des "events" (appels LLM, outils, etc.)
 # ==============================================================================
 langfuse = Langfuse(
     public_key=os.getenv("LANGFUSE_PUBLIC_KEY"),
@@ -48,10 +49,9 @@ def ask():
     """Endpoint : pose une question, reçoit une réponse tracée en Langfuse.
 
     Flux complet :
-    1. Créer une trace Langfuse
+    1. Créer un ID de trace et un TraceContext
     2. Appeler le LLM
-    3. Logger la génération (what was sent, what was returned)
-    4. Clore la trace (fin du contexte)
+    3. Logger l'événement avec le contexte de trace
     """
     # ===========================================================================
     # ÉTAPE 0 : Parser la requête
@@ -63,21 +63,18 @@ def ask():
         return jsonify({"error": "question required"}), 400
 
     # ===========================================================================
-    # ÉTAPE 1 : CRÉER UNE TRACE
+    # ÉTAPE 1 : CRÉER UN ID ET CONTEXTE DE TRACE
     # ===========================================================================
-    # langfuse.trace() crée un nouveau conteneur pour tous les événements
-    # qui vont suivre.
+    # langfuse.create_trace_id() génère un ID unique pour cette requête.
+    # TraceContext est un conteneur qui relie tous les événements ensemble.
     #
-    # Paramètres :
-    #   - name: identifiant lisible ("ask_endpoint" ici)
-    #   - input: dict de ce qui rentre (la question de l'utilisateur)
+    # Une trace = un conteneur pour grouper tous les événements relatifs
+    # à une requête utilisateur (appels LLM, outils, etc.)
     #
-    # Une trace a un ID unique (trace.id) et une URL visible sur cloud.langfuse.com.
+    # L'ID est visible sur cloud.langfuse.com pour trouver ta trace.
     # ===========================================================================
-    trace = langfuse.trace(
-        name="ask_endpoint",
-        input={"question": question},
-    )
+    trace_id = langfuse.create_trace_id()
+    trace_context = TraceContext(trace_id=trace_id)
 
     try:
         # =======================================================================
@@ -95,43 +92,36 @@ def ask():
         answer = response.content
 
         # =======================================================================
-        # ÉTAPE 3 : LOGGER LA GÉNÉRATION
+        # ÉTAPE 3 : LOGGER L'ÉVÉNEMENT
         # =======================================================================
-        # trace.generation() = "une génération s'est produite dans cette trace".
-        # C'est ce qui créera une "span" visuelle dans Langfuse.
+        # langfuse.create_event() = enregistrer un événement dans cette trace.
         #
         # Paramètres :
-        #   - name: nom de cette génération ("gpt-5.4_completion" ici)
-        #   - input: ce qu'on a envoyé au modèle (messages)
-        #   - output: ce que le modèle a retourné (réponse)
-        #   - model: quel modèle on a utilisé (pour agrégation Langfuse)
+        #   - trace_context: le contexte de trace créé plus haut (pour grouper)
+        #   - name: nom de cet événement ("ask_endpoint" ici)
+        #   - input: ce qu'on a reçu (la question)
+        #   - output: ce qu'on a retourné (la réponse)
         #
-        # Cet enregistrement apparaît ensuite dans Langfuse Cloud sous la trace.
-        # =======================================================================
-        trace.generation(
-            name="gpt-5.4_completion",
-            input={"messages": [{"role": "user", "content": question}]},
-            output={"message": answer},
-            model=os.getenv("AZURE_AI_INFERENCE_MODEL", "gpt-5.4"),
+        # Cet enregistrement apparaît ensuite dans Langfuse Cloud sous le trace_id.
+        # ===========================================================================
+        langfuse.create_event(
+            trace_context=trace_context,
+            name="ask_endpoint",
+            input={"question": question},
+            output={"answer": answer},
         )
 
-        # =======================================================================
-        # ÉTAPE 4 : CLORE LA TRACE
-        # =======================================================================
-        # trace.end() = "on a terminé ce contexte".
-        # On passe la réponse finale (output).
-        #
-        # Une fois end() appelé, Langfuse envoie la trace au serveur (en async).
-        # Elle devient visible sur cloud.langfuse.com.
-        # =======================================================================
-        trace.end(output={"answer": answer})
-
         # Retourner la réponse + l'ID de la trace pour que le client puisse s'y référer.
-        return jsonify({"answer": answer, "trace_id": trace.id}), 200
+        return jsonify({"answer": answer, "trace_id": trace_id}), 200
 
     except Exception as e:
-        # En cas d'erreur, clore quand même la trace pour documenter le problème.
-        trace.end(output={"error": str(e)})
+        # En cas d'erreur, enregistrer quand même l'erreur dans la trace.
+        langfuse.create_event(
+            trace_context=trace_context,
+            name="ask_endpoint_error",
+            input={"question": question},
+            output={"error": str(e)},
+        )
         return jsonify({"error": str(e)}), 500
 
 
