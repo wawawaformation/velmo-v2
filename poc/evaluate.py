@@ -1,7 +1,10 @@
-"""Évaluer le modèle en utilisant un dataset Langfuse.
+"""Évaluer le modèle en utilisant un dataset Langfuse + LLM-as-a-Judge.
 
 Objectif : charger un dataset, lancer chaque cas contre le modèle,
-et scorer automatiquement si la réponse est correcte.
+et scorer avec un juge IA (LLM-as-a-Judge).
+
+Le juge évalue la qualité de la réponse selon :
+- Pertinence, Clarté, Exactitude, Complétude, Concision
 """
 
 import os
@@ -9,6 +12,7 @@ import requests
 import json
 from dotenv import load_dotenv
 from langfuse import Langfuse
+from judge import judge_response
 
 load_dotenv()
 
@@ -95,39 +99,55 @@ def evaluate_dataset(dataset_name: str):
             print(f"    Attendu : {expected_answer}")
 
             # =================================================================
-            # ÉVALUATION
+            # ÉVALUATION AVEC LE JUGE (LLM-AS-A-JUDGE)
             # =================================================================
-            # Comparaison simple : exact match (tu peux affiner plus tard).
-            # Si ça correspond, score = 1.0, sinon 0.0.
+            # Au lieu de faire un simple exact match, on demande à un juge IA
+            # d'évaluer la qualité de la réponse.
+            #
+            # Le juge considère :
+            # - Pertinence, Clarté, Exactitude, Complétude, Concision
+            #
+            # Il retourne un score 0.0-1.0 (pas juste 0 ou 1).
             # =================================================================
-            is_correct = expected_answer and expected_answer.lower() in model_answer.lower()
-            score = 1.0 if is_correct else 0.0
+            print(f"    🤔 Judge is evaluating...")
+            score = judge_response(question_text, model_answer)
+            print(f"    Judge Score : {score:.2f} ")
 
-            print(f"    Score : {score} {'✅' if is_correct else '❌'}")
+            # Interpréter le score pour affichage visuel
+            if score >= 0.8:
+                status = "✅ Excellent"
+            elif score >= 0.6:
+                status = "👍 Bon"
+            elif score >= 0.4:
+                status = "⚠️  Passable"
+            else:
+                status = "❌ Mauvais"
+            print(f"    {status}")
+
             print(f"    Trace ID : {trace_id}")
 
             # =================================================================
-            # ENREGISTRER LE SCORE DANS LANGFUSE
+            # ENREGISTRER LE SCORE DU JUGE DANS LANGFUSE
             # =================================================================
-            # langfuse.create_score() attache un score à une trace existante.
+            # On enregistre le score du juge (pas un simple 0/1).
             #
             # Paramètres :
-            #   - name: nom du score ("correctness" ici)
-            #   - value: score numérique (0.0-1.0)
+            #   - name: "judge_score" (pour différencier du scoring simple)
+            #   - value: score du juge (0.0-1.0, nuancé)
             #   - trace_id: l'ID de la trace (créée par app.py)
-            #   - data_type: type de la valeur (NUMERIC ici)
-            #   - comment: optionnel, pour documenter
+            #   - data_type: "NUMERIC"
+            #   - comment: explications pour déboguer
             #
-            # Le score apparaît ensuite dans Langfuse Cloud attaché à la trace.
+            # Le score nuancé du juge apparaît dans Langfuse Cloud.
             # =================================================================
             if trace_id:
-                print(f"    📊 Posting score to Langfuse...")
+                print(f"    📊 Posting judge score to Langfuse...")
                 langfuse.create_score(
-                    name="correctness",
+                    name="judge_score",
                     value=score,
                     trace_id=trace_id,
                     data_type="NUMERIC",
-                    comment=f"Expected: {expected_answer}, Got: {model_answer}",
+                    comment=f"Judge evaluated: {model_answer[:100]}...",
                 )
                 print(f"    ✅ Score posted")
 
