@@ -4,11 +4,26 @@ import AppHeader from './components/AppHeader.vue'
 import AppNav from './components/AppNav.vue'
 import AppFooter from './components/AppFooter.vue'
 
+// Libellés humains — mêmes catégories que _CATEGORY_LABELS côté backend
+// (src/velmo/guardrails/__init__.py), dupliqués ici car le front n'a pas
+// accès au code Python.
+const GUARDRAIL_LABELS = {
+  hate: 'propos à caractère haineux',
+  violence: 'menace ou contenu violent',
+  sexual: 'contenu à caractère sexuel',
+  self_harm: 'contenu lié à l’automutilation',
+  out_of_scope: 'hors périmètre',
+  prompt_injection: 'tentative de contournement des instructions',
+  pii: 'donnée sensible',
+  secret_leak: 'donnée sensible',
+}
+
 const users = ref([])
 const selectedUserId = ref('')
 const message = ref('')
 const reply = ref('')
 const latencyMs = ref(null)
+const guardrailCategory = ref(null)
 const isLoading = ref(false)
 const isError = ref(false)
 
@@ -32,6 +47,7 @@ async function submitMessage() {
   isError.value = false
   reply.value = ''
   latencyMs.value = null
+  guardrailCategory.value = null
 
   try {
     const response = await fetch('/api/messages', {
@@ -45,6 +61,7 @@ async function submitMessage() {
     const data = await response.json()
     reply.value = data.reply
     latencyMs.value = data.latency_ms
+    guardrailCategory.value = data.guardrail_category
   } catch (err) {
     isError.value = true
     reply.value = "Une erreur est survenue en contactant l'assistant. Réessayez dans un instant."
@@ -88,6 +105,9 @@ onMounted(loadUsers)
           <circle cx="12" cy="12" r="9" /><polyline points="12 7 12 12 15 14" />
         </svg>
         <span>{{ (latencyMs / 1000).toFixed(1) }} s</span>
+        <span v-if="guardrailCategory" class="guardrail-tag">
+          garde-fou : {{ GUARDRAIL_LABELS[guardrailCategory] || guardrailCategory }}
+        </span>
       </span>
       <div
         class="response-box"
@@ -99,10 +119,7 @@ onMounted(loadUsers)
       </div>
     </div>
 
-    <p class="meta">
-      Aucune authentification à ce stade — le client sélectionné détermine l'identité envoyée à l'API.
-    </p>
-
+   
     <div class="ai-notice" role="note">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <circle cx="12" cy="12" r="9" /><line x1="12" y1="11" x2="12" y2="16.5" /><circle cx="12" cy="7.8" r="0.9" fill="currentColor" stroke="none" />
@@ -243,6 +260,16 @@ button.submit {
     width: 12px;
     height: 12px;
     opacity: 0.75;
+  }
+}
+
+.guardrail-tag {
+  font-family: inherit;
+  font-size: 11.5px;
+  color: var(--warning);
+  &::before {
+    content: '·';
+    margin-right: 5px;
   }
 }
 

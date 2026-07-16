@@ -1,0 +1,88 @@
+<mxfile host="Electron">
+  <diagram name="API / Frontend — flux réel" id="api-frontend-flux-reel">
+    <mxGraphModel dx="1837" dy="933" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1300" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;align=left;verticalAlign=middle;fontSize=16;fontStyle=1;" value="API REST / Frontend Vue.js — flux réel implémenté (src/velmo/api.py, frontend/)" vertex="1">
+          <mxGeometry height="30" width="900" x="20" y="10" as="geometry" />
+        </mxCell>
+        <mxCell id="actor" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;" value="Client" vertex="1">
+          <mxGeometry height="60" width="30" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="app_vue" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="App.vue&#xa;(Vue 3 + Vite + Sass)" vertex="1">
+          <mxGeometry height="60" width="200" x="140" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="e_actor_app" edge="1" parent="1" source="actor" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;" target="app_vue" value="saisit un message,&#xa;choisit un client">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="app_nav" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" value="AppNav.vue&#xa;dropdown profil&#xa;→ update:selectedUserId" vertex="1">
+          <mxGeometry height="60" width="180" x="140" y="180" as="geometry" />
+        </mxCell>
+        <mxCell id="e_app_nav" edge="1" parent="1" source="app_vue" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;dashed=1;" target="app_nav" value="v-model">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="vite_proxy" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" value="Proxy Vite (dev only)&#xa;vite.config.js&#xa;/api/* → http://localhost:8000/*&#xa;(évite tout souci CORS, aucune URL en dur dans le JS)" vertex="1">
+          <mxGeometry height="70" width="280" x="480" y="55" as="geometry" />
+        </mxCell>
+        <mxCell id="e_app_fetch_messages" edge="1" parent="1" source="app_vue" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;" target="vite_proxy" value="fetch(&#39;/api/messages&#39;, POST)&#xa;fetch(&#39;/api/users&#39;, GET)">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fastapi" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="FastAPI (src/velmo/api.py)" vertex="1">
+          <mxGeometry height="50" width="220" x="790" y="75" as="geometry" />
+        </mxCell>
+        <mxCell id="e_proxy_fastapi" edge="1" parent="1" source="vite_proxy" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;" target="fastapi" value="relaie">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lifespan" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" value="lifespan (démarrage FastAPI)&#xa;configure_logging()&#xa;app.state.kb = get_kb()&#xa;app.state.chat_model = get_chat_model()&#xa;  → RuntimeError si Azure absent (échec au démarrage,&#xa;    pas au premier message — contrairement au CLI)&#xa;memory_scheduler.start() (une fois pour tout le process)" vertex="1">
+          <mxGeometry height="120" width="320" x="970" y="160" as="geometry" />
+        </mxCell>
+        <mxCell id="e_fastapi_lifespan" edge="1" parent="1" source="fastapi" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;dashed=1;" target="lifespan" value="au démarrage du process">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="get_users" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" value="GET /users&#xa;session.query(Customer)&#xa;→ liste customers (référentiel client,&#xa;pas la mémoire — un client sans historique&#xa;apparaît quand même ici)" vertex="1">
+          <mxGeometry height="90" width="280" x="600" y="290" as="geometry" />
+        </mxCell>
+        <mxCell id="e_fastapi_getusers" edge="1" parent="1" source="fastapi" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;" target="get_users">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="post_messages" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" value="POST /messages&#xa;get_session() — une session DB par requête&#xa;(fermée après chaque appel, pas d&#39;état partagé)" vertex="1">
+          <mxGeometry height="70" width="300" x="820" y="400" as="geometry" />
+        </mxCell>
+        <mxCell id="e_fastapi_postmessages" edge="1" parent="1" source="fastapi" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;" target="post_messages">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="new_agent" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" value="Agent(model=app.state.chat_model,&#xa;memory=MemoryManager(), guardrails=GuardrailEngine(),&#xa;session=session, kb=app.state.kb)&#xa;— reconstruit à la volée à chaque requête —" vertex="1">
+          <mxGeometry height="90" width="320" x="810" y="560" as="geometry" />
+        </mxCell>
+        <mxCell id="e_postmessages_agent" edge="1" parent="1" source="post_messages" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;" target="new_agent">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="agent_respond" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="agent.respond(user_id, message)&#xa;— même agent que le CLI : garde-fous + mémoire —" vertex="1">
+          <mxGeometry height="60" width="320" x="810" y="720" as="geometry" />
+        </mxCell>
+        <mxCell id="e_agent_respond" edge="1" parent="1" source="new_agent" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;" target="agent_respond" value="time.monotonic() autour de l&#39;appel">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="response" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" value="MessageResponse&#xa;reply: str (Markdown brut, non rendu par l&#39;API)&#xa;latency_ms: float&#xa;guardrail_category: str | None&#xa;  (lu dans guardrails.events[-1] après respond(),&#xa;   instance neuve par requête → jamais un résidu&#xa;   d&#39;un tour précédent)" vertex="1">
+          <mxGeometry height="130" width="340" x="800" y="870" as="geometry" />
+        </mxCell>
+        <mxCell id="e_respond_response" edge="1" parent="1" source="agent_respond" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;" target="response">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="app_result" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" value="App.vue (état local)&#xa;reply, latencyMs, guardrailCategory&#xa;→ zone de réponse + indicateur de latence&#xa;+ étiquette garde-fou (GUARDRAIL_LABELS,&#xa;dupliqué de _CATEGORY_LABELS côté backend)&#xa;isError=true sur !response.ok / exception fetch" vertex="1">
+          <mxGeometry height="110" width="320" x="100" y="300" as="geometry" />
+        </mxCell>
+        <mxCell id="e_proxy_appresult" edge="1" parent="1" source="vite_proxy" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;exitX=0;exitY=1;entryX=1;entryY=0.3;" target="app_result" value="réponse fetch">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ai_notice" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=10;" value="Bandeau « Vous échangez avec une IA »&#xa;Système à risque limité (Règlement européen sur l&#39;IA, art. 50)&#xa;lien vers la page CNIL — affiché en permanence, pas conditionné&#xa;à une réponse" vertex="1">
+          <mxGeometry height="70" width="320" x="100" y="550" as="geometry" />
+        </mxCell>
+        <mxCell id="e_appresult_notice" edge="1" parent="1" source="app_result" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;dashed=1;" target="ai_notice">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

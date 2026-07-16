@@ -65,6 +65,7 @@ class MessageRequest(BaseModel):
 class MessageResponse(BaseModel):
     reply: str
     latency_ms: float
+    guardrail_category: str | None = None
 
 
 class UserResponse(BaseModel):
@@ -76,10 +77,11 @@ class UserResponse(BaseModel):
 
 @app.post("/messages")
 def post_message(request: MessageRequest, session=Depends(get_session)) -> MessageResponse:
+    guardrails = GuardrailEngine()
     agent = Agent(
         model=app.state.chat_model,
         memory=MemoryManager(),
-        guardrails=GuardrailEngine(),
+        guardrails=guardrails,
         session=session,
         kb=app.state.kb,
     )
@@ -90,7 +92,10 @@ def post_message(request: MessageRequest, session=Depends(get_session)) -> Messa
     start = time.monotonic()
     reply = agent.respond(request.user_id, request.message)
     latency_ms = (time.monotonic() - start) * 1000
-    return MessageResponse(reply=reply, latency_ms=latency_ms)
+    # guardrails est une instance neuve par requête (pas de session partagée) :
+    # un event dans .events signifie forcément un blocage survenu ce tour-ci.
+    guardrail_category = guardrails.events[-1]["category"] if guardrails.events else None
+    return MessageResponse(reply=reply, latency_ms=latency_ms, guardrail_category=guardrail_category)
 
 
 @app.get("/users")

@@ -1,6 +1,6 @@
 <mxfile host="Electron">
   <diagram name="Garde-fous — flux réel" id="guardrails-flux-reel">
-    <mxGraphModel dx="1272" dy="677" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="1000" math="0" shadow="0">
+    <mxGraphModel dx="1002" dy="533" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="1000" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -137,7 +137,19 @@
           <mxGeometry height="60" width="280" x="40" y="1239" as="geometry" />
         </mxCell>
         <mxCell id="MZaAKxrSdwUU9x5_opv5-2" parent="1" style="shape=dataStorage;whiteSpace=wrap;html=1;fixedSize=1;" value="Log" vertex="1">
-          <mxGeometry height="80" width="100" x="460" y="750" as="geometry" />
+          <mxGeometry height="80" width="100" x="490" y="710" as="geometry" />
+        </mxCell>
+        <mxCell id="yUsyPT6ZRNYF6VVHKMGU-1" parent="1" style="rhombus;whiteSpace=wrap;html=1;" value="SelfHarm ?" vertex="1">
+          <mxGeometry height="80" width="80" x="250" y="610" as="geometry" />
+        </mxCell>
+        <mxCell id="yUsyPT6ZRNYF6VVHKMGU-2" edge="1" parent="1" source="block" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.835;entryY=0.33;entryDx=0;entryDy=0;entryPerimeter=0;" target="yUsyPT6ZRNYF6VVHKMGU-1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="yUsyPT6ZRNYF6VVHKMGU-3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="Réponse 3114" vertex="1">
+          <mxGeometry height="60" width="120" x="50" y="610" as="geometry" />
+        </mxCell>
+        <mxCell id="yUsyPT6ZRNYF6VVHKMGU-4" edge="1" parent="1" source="yUsyPT6ZRNYF6VVHKMGU-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1.006;entryY=0.596;entryDx=0;entryDy=0;entryPerimeter=0;" target="yUsyPT6ZRNYF6VVHKMGU-3">
+          <mxGeometry relative="1" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>

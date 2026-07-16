@@ -77,6 +77,30 @@ def test_post_messages_runs_tool_call_against_real_db():
     assert body["latency_ms"] >= 0
 
 
+def test_post_messages_reports_null_guardrail_category_when_allowed():
+    model = ScriptedToolCallingModel(responses=[AIMessage("Bonjour, comment puis-je vous aider ?")])
+    client, _ = _client_with_model(model)
+
+    response = client.post("/messages", json={"user_id": "C-marc-dubois", "message": "Bonjour"})
+
+    assert response.json()["guardrail_category"] is None
+
+
+def test_post_messages_reports_guardrail_category_when_blocked():
+    # Le front (Vue.js) doit pouvoir afficher la catégorie de blocage — le
+    # modèle scripté ne doit même pas être invoqué (before_agent court-circuite).
+    model = ScriptedToolCallingModel(responses=[])
+    client, _ = _client_with_model(model)
+
+    response = client.post(
+        "/messages",
+        json={"user_id": "C-marc-dubois", "message": "Sale race, retournez dans votre pays avec vos maillots."},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["guardrail_category"] == "hate"
+
+
 def test_post_messages_rejects_missing_fields():
     model = ScriptedToolCallingModel(responses=[AIMessage("peu importe")])
     client, _ = _client_with_model(model)
