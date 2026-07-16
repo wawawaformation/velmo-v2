@@ -106,6 +106,31 @@ def evaluate_dataset(dataset_name: str):
             print(f"    Score : {score} {'✅' if is_correct else '❌'}")
             print(f"    Trace ID : {trace_id}")
 
+            # =================================================================
+            # ENREGISTRER LE SCORE DANS LANGFUSE
+            # =================================================================
+            # langfuse.create_score() attache un score à une trace existante.
+            #
+            # Paramètres :
+            #   - name: nom du score ("correctness" ici)
+            #   - value: score numérique (0.0-1.0)
+            #   - trace_id: l'ID de la trace (créée par app.py)
+            #   - data_type: type de la valeur (NUMERIC ici)
+            #   - comment: optionnel, pour documenter
+            #
+            # Le score apparaît ensuite dans Langfuse Cloud attaché à la trace.
+            # =================================================================
+            if trace_id:
+                print(f"    📊 Posting score to Langfuse...")
+                langfuse.create_score(
+                    name="correctness",
+                    value=score,
+                    trace_id=trace_id,
+                    data_type="NUMERIC",
+                    comment=f"Expected: {expected_answer}, Got: {model_answer}",
+                )
+                print(f"    ✅ Score posted")
+
             scores.append(score)
 
         except requests.exceptions.RequestException as e:
