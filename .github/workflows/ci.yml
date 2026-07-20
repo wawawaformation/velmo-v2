@@ -86,7 +86,7 @@ jobs:
             "${EP%/}/chat/completions" \
             -H "Authorization: Bearer ${KEY}" \
             -H "Content-Type: application/json" \
-            -d "{\"model\":\"${MODEL}\",\"messages\":[{\"role\":\"user\",\"content\":\"OK\"}],\"max_tokens\":5}")
+            -d "{\"model\":\"${MODEL}\",\"messages\":[{\"role\":\"user\",\"content\":\"OK\"}],\"max_completion_tokens\":16}")
           echo "HTTP status : $code (200=OK, 401=clé, 404=modèle/endpoint, 429=quota)"
           echo "---- réponse ----"; cat /tmp/azure_resp.txt || true; echo
 
