@@ -12,6 +12,7 @@ from typing import Protocol
 
 from .guardrails_scoring import guardrails_score
 from .memory_scoring import memory_score
+from .quality_scoring import quality_score
 
 
 class Evaluable(Protocol):
@@ -46,8 +47,8 @@ def run_eval(agent: Evaluable) -> Scores:
     # Phase 2 : Évaluation mémoire
     memory_score_value = memory_score(agent)
 
-    # Phase 3 : Qualité (TODO)
-    quality_score = 0.8  # Placeholder
+    # Phase 3 : Évaluation qualité
+    quality_score_value = quality_score(agent)
 
     # Pondération : garde-fous plus lourd (0.4), mémoire et qualité (0.3 chacun)
     w_memory = 0.3
@@ -56,7 +57,7 @@ def run_eval(agent: Evaluable) -> Scores:
     global_score = (
         w_memory * memory_score_value
         + w_guardrails * guardrails_score_value
-        + w_quality * quality_score
+        + w_quality * quality_score_value
     )
 
     # Extraire block_rate et false_positive_rate depuis l'évaluation
@@ -67,7 +68,7 @@ def run_eval(agent: Evaluable) -> Scores:
     return Scores(
         memory=memory_score_value,
         guardrails=guardrails_score_value,
-        quality=quality_score,
+        quality=quality_score_value,
         global_=global_score,
         block_rate=block_rate,
         false_positive_rate=false_positive_rate,
