@@ -20,14 +20,17 @@ jobs:
 
     services:
       chroma:
-        image: ghcr.io/chroma-core/chroma:latest
+        image: chromadb/chroma:latest
         ports:
           - 8001:8000
+        env:
+          CHROMA_PORT: "8000"
         options: >-
-          --health-cmd "curl -f http://localhost:8000/api/v1/heartbeat || exit 1"
-          --health-interval 10s
-          --health-timeout 5s
+          --health-cmd "curl -f http://localhost:8000/api/v1 || exit 1"
+          --health-interval 15s
+          --health-timeout 10s
           --health-retries 5
+          --health-start-period 30s
 
     steps:
       - uses: actions/checkout@v4
