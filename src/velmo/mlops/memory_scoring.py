@@ -30,6 +30,7 @@ def memory_score(agent) -> float:
         user_id = case["user_id"]
         turns = case["turns"]
         evaluation = case["evaluation"]
+        question = evaluation["question"]
         expected_substring = evaluation["expected_substring"]
 
         # Rejout chaque tour utilisateur pour construire la mémoire
@@ -38,7 +39,7 @@ def memory_score(agent) -> float:
                 agent.respond(user_id, turn["content"])
 
         # Vérifie que le contexte mémoire contient l'info attendue
-        memory_context = agent.memory.read(user_id, evaluation["question"]).render()
+        memory_context = agent.memory.read(user_id, question).render()
         total += 1
         if expected_substring.lower() in memory_context.lower():
             passed += 1
