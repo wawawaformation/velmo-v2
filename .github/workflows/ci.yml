@@ -34,7 +34,7 @@ jobs:
       - name: Lint (ruff)
         run: uv run ruff check .
 
-      # Etage 2: tests unitaires/metier locaux
-      - name: Test suite (pytest)
-        run: uv run pytest tests/ -v
+      # Etage 2: tests unitaires uniquement (acceptance pour dev/main)
+      - name: Test suite (pytest unit only)
+        run: uv run pytest tests/unit/ -v
 
