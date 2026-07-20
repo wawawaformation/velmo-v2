@@ -18,6 +18,28 @@ jobs:
   lint-and-unit:
     runs-on: ubuntu-latest
 
+    # Mêmes images que docker-compose (parité local). Le health check en
+    # conteneur de Chroma échouait car `curl` n'est pas dans l'image : on
+    # attend Chroma côté runner (étape dédiée) plutôt qu'en conteneur.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: app
+          POSTGRES_DB: velmo
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U app -d velmo"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      chroma:
+        image: chromadb/chroma:0.5.23
+        ports:
+          - 8001:8000
+
     steps:
       - uses: actions/checkout@v4
 
@@ -34,6 +56,18 @@ jobs:
       - name: Lint (ruff)
         run: uv run ruff check .
 
+      # Attente Chroma (dev/main) : health check runner-side, curl dispo ici
+      - name: Wait for Chroma
+        if: github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main'
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:8001/api/v1/heartbeat >/dev/null; then
+              echo "Chroma prêt"; exit 0
+            fi
+            echo "attente Chroma ($i/30)..."; sleep 2
+          done
+          echo "Chroma injoignable"; exit 1
+
       # Etage 2: tests unitaires toujours, acceptance sur dev/main
       - name: Test suite (pytest)
         env:
@@ -45,6 +79,8 @@ jobs:
           EVAL_MIN_SCORE: "0.8"
         run: |
           if [[ "${{ github.ref }}" == "refs/heads/dev" || "${{ github.ref }}" == "refs/heads/main" ]]; then
+            export CHROMA_URL=http://localhost:8001
+            export DB_URL=postgresql+psycopg://app:app@localhost:5432/velmo
             uv run pytest tests/ -v
           else
             uv run pytest tests/unit/ -v

@@ -13,10 +13,15 @@ from velmo.mlops import (
     write_report,
 )
 
+# L'évaluation MLOps mesure le vrai agent (LLM Azure réel), pas un modèle scripté :
+# un faux modèle ne peut ni raisonner ni appeler les outils, donc la note qualité
+# n'aurait aucun sens. Skip automatique hors CI si les identifiants sont absents.
+pytestmark = pytest.mark.real_llm
 
-def test_scores_produced_and_versioned():
+
+def test_scores_produced_and_versioned(real_model):
     # Critère : note globale + notes mémoire / garde-fous / qualité, versionnées.
-    scores = run_eval(build_reference_agent())
+    scores = run_eval(build_reference_agent(model=real_model))
     assert scores.global_ is not None and 0.0 <= scores.global_ <= 1.0
     assert scores.memory is not None
     assert scores.guardrails is not None
@@ -24,10 +29,10 @@ def test_scores_produced_and_versioned():
     assert current_version()
 
 
-def test_regression_blocks_delivery():
+def test_regression_blocks_delivery(real_model):
     # Critère : une régression fait chuter la note et bloque la livraison.
-    good = run_eval(build_reference_agent())
-    degraded = run_eval(build_degraded_agent())
+    good = run_eval(build_reference_agent(model=real_model))
+    degraded = run_eval(build_degraded_agent(model=real_model))
 
     assert degraded.global_ < good.global_
     enforce_threshold(good, 0.8)  # ne doit pas lever
@@ -35,9 +40,9 @@ def test_regression_blocks_delivery():
         enforce_threshold(degraded, 0.8)
 
 
-def test_report_contains_signals(tmp_path):
+def test_report_contains_signals(tmp_path, real_model):
     # Critère : note mémoire, taux de blocage, taux de faux positifs, latence, coût visibles.
-    scores = run_eval(build_reference_agent())
+    scores = run_eval(build_reference_agent(model=real_model))
     report = tmp_path / "report.md"
     write_report(scores, report)
 

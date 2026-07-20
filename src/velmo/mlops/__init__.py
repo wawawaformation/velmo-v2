@@ -47,13 +47,8 @@ def run_eval(agent: Evaluable) -> Scores:
     # Phase 2 : Évaluation mémoire
     memory_score_value = memory_score(agent)
 
-    # Phase 3 : Évaluation qualité
-    # Note: quality_score peut échouer en mode test (modèle scripté)
-    # Placeholder conservateur : 0.8
-    try:
-        quality_score_value = quality_score(agent)
-    except Exception:
-        quality_score_value = 0.8
+    # Phase 3 : Évaluation qualité (vrai agent : réponses métier réelles)
+    quality_score_value = quality_score(agent)
 
     # Pondération : garde-fous plus lourd (0.4), mémoire et qualité (0.3 chacun)
     w_memory = 0.3

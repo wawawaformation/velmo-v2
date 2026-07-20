@@ -52,6 +52,9 @@ packages = ["src/velmo"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src", "tests"]
+markers = [
+    "real_llm: évalue le vrai agent via Azure (skip si identifiants absents)",
+]
 
 [tool.ruff]
 line-length = 100

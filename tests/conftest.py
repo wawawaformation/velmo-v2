@@ -28,15 +28,38 @@ _AZURE_ENV_VARS = (
 
 
 @pytest.fixture(autouse=True)
-def _no_real_llm_calls(monkeypatch):
+def _no_real_llm_calls(request, monkeypatch):
     """Neutralise les identifiants Azure pour forcer le repli `EchoLLM` (tests hors-ligne).
 
     Sans ceci, `get_classifier_llm()`/`get_llm()` appellent le vrai Azure dès que ces
     variables sont présentes dans l'environnement (ex. via `.env`), rendant les tests
     lents (appels réseau réels) et non déterministes.
+
+    Exception : les tests marqués `real_llm` évaluent le vrai agent (suite MLOps
+    qualité) et doivent conserver les identifiants Azure.
     """
+    if request.node.get_closest_marker("real_llm"):
+        return
     for var in _AZURE_ENV_VARS:
         monkeypatch.delenv(var, raising=False)
+
+
+@pytest.fixture
+def real_model():
+    """Vrai modèle Azure pour l'évaluation MLOps ; skip si les creds sont absents.
+
+    Charge `.env` (non chargé automatiquement en test) pour que l'évaluation
+    tourne aussi en local, pas seulement en CI où les secrets sont injectés.
+    """
+    from dotenv import load_dotenv
+
+    from velmo.llm import get_chat_model
+
+    load_dotenv()
+    model = get_chat_model()
+    if model is None:
+        pytest.skip("Identifiants Azure requis pour l'évaluation MLOps (vrai agent)")
+    return model
 
 
 def load_jsonl(name: str) -> list[dict]:
