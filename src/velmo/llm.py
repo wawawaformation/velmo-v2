@@ -1,4 +1,4 @@
-"""Clients LLM : Azure AI Inference (Kimi-K2.6) et repli local hors-ligne.
+"""Clients LLM : Azure AI Inference (gpt-5.4) et repli local hors-ligne.
 
 L'import du SDK Azure est différé pour que le harness démarre et que les tests
 tournent sans dépendre du SDK ni d'un endpoint joignable.
@@ -117,7 +117,7 @@ def get_llm() -> LLM:
     llm = AzureAIOpenAIApiChatModel(
         endpoint=os.environ["AZURE_AI_INFERENCE_ENDPOINT"],
         credential=os.environ["AZURE_AI_INFERENCE_API_KEY"],
-        model=os.environ.get("AZURE_AI_INFERENCE_MODEL", "Kimi-K2.6"),
+        model=os.environ.get("AZURE_AI_INFERENCE_MODEL", "gpt-5.4"),
         timeout=LLM_TIMEOUT_SECONDS,
     )
     return LangChainAdapter(llm)
@@ -138,7 +138,7 @@ def get_chat_model():
     return AzureAIOpenAIApiChatModel(
         endpoint=os.environ["AZURE_AI_INFERENCE_ENDPOINT"],
         credential=os.environ["AZURE_AI_INFERENCE_API_KEY"],
-        model=os.environ.get("AZURE_AI_INFERENCE_MODEL", "Kimi-K2.6"),
+        model=os.environ.get("AZURE_AI_INFERENCE_MODEL", "gpt-5.4"),
         timeout=LLM_TIMEOUT_SECONDS,
     )
 
