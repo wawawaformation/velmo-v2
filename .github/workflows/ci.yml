@@ -68,28 +68,6 @@ jobs:
           done
           echo "Chroma injoignable"; exit 1
 
-      # Diagnostic secrets Azure (dev/main, non bloquant) : longueurs attendues
-      # endpoint=60, api_key=84, model=7. Un écart = secret mal collé
-      # (retour ligne/espace). Affiche seulement longueurs + code HTTP.
-      - name: Diagnose Azure secrets
-        if: github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main'
-        continue-on-error: true
-        env:
-          EP: ${{ secrets.AZURE_AI_INFERENCE_ENDPOINT }}
-          KEY: ${{ secrets.AZURE_AI_INFERENCE_API_KEY }}
-          MODEL: ${{ secrets.AZURE_AI_INFERENCE_MODEL }}
-        run: |
-          echo "endpoint length : ${#EP} (attendu 60)"
-          echo "api_key  length : ${#KEY} (attendu 84)"
-          echo "model    length : ${#MODEL} (attendu 7)"
-          code=$(curl -s -o /tmp/azure_resp.txt -w "%{http_code}" \
-            "${EP%/}/chat/completions" \
-            -H "Authorization: Bearer ${KEY}" \
-            -H "Content-Type: application/json" \
-            -d "{\"model\":\"${MODEL}\",\"messages\":[{\"role\":\"user\",\"content\":\"OK\"}],\"max_completion_tokens\":16}")
-          echo "HTTP status : $code (200=OK, 401=clé, 404=modèle/endpoint, 429=quota)"
-          echo "---- réponse ----"; cat /tmp/azure_resp.txt || true; echo
-
       # Etage 2: tests unitaires toujours, acceptance sur dev/main
       - name: Test suite (pytest)
         env:
