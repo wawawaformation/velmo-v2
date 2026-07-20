@@ -34,7 +34,12 @@ jobs:
       - name: Lint (ruff)
         run: uv run ruff check .
 
-      # Etage 2: tests unitaires uniquement (acceptance pour dev/main)
-      - name: Test suite (pytest unit only)
-        run: uv run pytest tests/unit/ -v
+      # Etage 2: tests unitaires toujours, acceptance sur dev/main
+      - name: Test suite (pytest)
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/dev" || "${{ github.ref }}" == "refs/heads/main" ]]; then
+            uv run pytest tests/ -v
+          else
+            uv run pytest tests/unit/ -v
+          fi
 
