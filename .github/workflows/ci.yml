@@ -18,20 +18,6 @@ jobs:
   lint-and-unit:
     runs-on: ubuntu-latest
 
-    services:
-      chroma:
-        image: chromadb/chroma:latest
-        ports:
-          - 8001:8000
-        env:
-          CHROMA_PORT: "8000"
-        options: >-
-          --health-cmd "curl -f http://localhost:8000/api/v1 || exit 1"
-          --health-interval 15s
-          --health-timeout 10s
-          --health-retries 5
-          --health-start-period 30s
-
     steps:
       - uses: actions/checkout@v4
 
@@ -51,7 +37,6 @@ jobs:
       # Etage 2: tests unitaires toujours, acceptance sur dev/main
       - name: Test suite (pytest)
         env:
-          CHROMA_URL: http://localhost:8001
           AZURE_AI_INFERENCE_ENDPOINT: ${{ secrets.AZURE_AI_INFERENCE_ENDPOINT }}
           AZURE_AI_INFERENCE_API_KEY: ${{ secrets.AZURE_AI_INFERENCE_API_KEY }}
           AZURE_AI_INFERENCE_MODEL: ${{ secrets.AZURE_AI_INFERENCE_MODEL }}
