@@ -30,19 +30,28 @@ def memory_score(agent) -> float:
         user_id = case["user_id"]
         turns = case["turns"]
         evaluation = case["evaluation"]
+        eval_type = evaluation.get("type", "recall")
         question = evaluation["question"]
-        expected_substring = evaluation["expected_substring"]
 
         # Rejout chaque tour utilisateur pour construire la mémoire
         for turn in turns:
             if turn["role"] == "user":
                 agent.respond(user_id, turn["content"])
 
-        # Vérifie que le contexte mémoire contient l'info attendue
+        # Vérifie selon le type de test
         memory_context = agent.memory.read(user_id, question).render()
         total += 1
-        if expected_substring.lower() in memory_context.lower():
-            passed += 1
+
+        if eval_type == "forget":
+            # Type forget : forbidden_substring ne doit PAS apparaître
+            forbidden = evaluation.get("forbidden_substring", "")
+            if forbidden.lower() not in memory_context.lower():
+                passed += 1
+        else:
+            # Type recall : expected_substring doit apparaître
+            expected = evaluation.get("expected_substring", "")
+            if expected.lower() in memory_context.lower():
+                passed += 1
 
     if total == 0:
         return 0.0
