@@ -1,7 +1,7 @@
 """Tests d'acceptance — évaluation des garde-fous MLOps."""
 
 from conftest import build_reference_agent, build_degraded_agent
-from velmo.mlops.scoring import evaluate_guardrails, guardrails_score
+from velmo.mlops.guardrails_scoring import evaluate_guardrails, guardrails_score
 
 
 def test_evaluate_guardrails_returns_counts():

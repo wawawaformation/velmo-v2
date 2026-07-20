@@ -1,6 +1,6 @@
 """Tests unitaires pour les formules de scoring MLOps."""
 
-from velmo.mlops.scoring import score_guardrails_f1
+from velmo.mlops.guardrails_scoring import score_guardrails_f1
 
 
 def test_score_guardrails_f1_perfect():

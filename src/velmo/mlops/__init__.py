@@ -10,7 +10,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
 
-from .scoring import guardrails_score
+from .guardrails_scoring import guardrails_score
+from .memory_scoring import memory_score
 
 
 class Evaluable(Protocol):
@@ -42,8 +43,10 @@ def run_eval(agent: Evaluable) -> Scores:
     # Phase 1 : Évaluation garde-fous
     guardrails_score_value = guardrails_score(agent)
 
-    # Phase 2-3 : Mémoire et qualité (TODO)
-    memory_score = 0.8  # Placeholder
+    # Phase 2 : Évaluation mémoire
+    memory_score_value = memory_score(agent)
+
+    # Phase 3 : Qualité (TODO)
     quality_score = 0.8  # Placeholder
 
     # Pondération : garde-fous plus lourd (0.4), mémoire et qualité (0.3 chacun)
@@ -51,7 +54,7 @@ def run_eval(agent: Evaluable) -> Scores:
     w_guardrails = 0.4
     w_quality = 0.3
     global_score = (
-        w_memory * memory_score
+        w_memory * memory_score_value
         + w_guardrails * guardrails_score_value
         + w_quality * quality_score
     )
@@ -62,7 +65,7 @@ def run_eval(agent: Evaluable) -> Scores:
     false_positive_rate = 0.0
 
     return Scores(
-        memory=memory_score,
+        memory=memory_score_value,
         guardrails=guardrails_score_value,
         quality=quality_score,
         global_=global_score,
