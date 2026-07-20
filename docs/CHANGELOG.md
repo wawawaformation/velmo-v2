@@ -7,6 +7,21 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### MLOPS — Observabilité et Évaluation (Chantier 3, Phase 1)
+
+**POC LangFuse Cloud — Fondations complètes** (branche `poc-langfuse`, 8 commits)
+
+- **Traces LangFuse** : `create_trace_id()` + `create_event()` pour grouper les événements LLM
+- **Datasets pour l'évaluation** : créer, charger, itérer (3 suites planifiées : mémoire 12 cas, garde-fous 37 cas, qualité 8 cas)
+- **Scoring automatique** : `create_score()` attaché aux traces, visible sur cloud.langfuse.com
+- **LLM-as-a-Judge** : évaluation nuancée 0.0-1.0 (5 critères : pertinence, clarté, exactitude, complétude, concision)
+- **CI skip pour POC** : branch `poc-langfuse` n'exécute pas les jobs lourds (lint-and-unit, eval-suites)
+- **Documentation MLOPS** : `docs/MLOPS_PROGRESS.md` synthétise l'état d'avancement (état POC, intégration Velmo pending)
+
+Fichiers : `poc/app.py`, `poc/datasets.py`, `poc/evaluate.py`, `poc/judge.py`, `poc/README.md`, `.github/workflows/quality.yml` (skip poc-langfuse)
+
+**Prochaines étapes** : suites d'évaluation mémoire/garde-fous/qualité → notation → CI gate → monitoring prod
+
 ### Ajouté
 
 - **Garde-fous — catégorie `self_harm` (automutilation) avec redirection d'aide** : Azure Content Safety renvoie déjà une catégorie `SelfHarm`, jusqu'ici volontairement ignorée (aucun mapping dans `content_safety.py`) faute d'équivalent Velmo. Nouvelle catégorie `self_harm` à part entière, cascade complète à 3 niveaux comme les autres catégories : règles regex (`moderation.py`, motifs déplacés depuis `violence` où ils étaient mal classés — « comment me faire du mal » n'est pas une menace envers autrui), Content Safety (`SelfHarm` → `self_harm`), classifieur LLM (`moderation_llm.py`, catégorie ajoutée au prompt few-shot). Comportement délibérément différent des autres catégories : pas un simple refus, mais une redirection vers le **3114**, numéro national français de prévention du suicide (gratuit, 24h/24, 7j/7 — cf. [3114.fr](https://3114.fr/)), décision actée pour un sujet qui appelle une réponse responsable plutôt qu'un blocage sec. Tests : `tests/unit/test_guardrails_moderation.py::test_detects_self_harm`, `tests/unit/test_content_safety.py::test_detect_content_safety_maps_self_harm_category`, `tests/unit/test_guardrails_moderation_llm.py::test_detects_self_harm_category_from_llm_response`, `tests/unit/test_guardrail_engine.py::test_check_input_self_harm_redirects_to_help_resource`.
