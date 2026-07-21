@@ -23,6 +23,15 @@ DEFAULT_MANIFEST_PATH = Path(__file__).resolve().parents[3] / "mlops" / "eval_ma
 # Les trois suites du chantier 3 : toute absence est une erreur, pas un défaut.
 _REQUIRED_SUITES = ("memory", "guardrails", "quality")
 
+# Les quatre prompts de l'agent : chacun doit porter une version déclarée,
+# sinon la traçabilité du rapport est muette sur une partie du système.
+_REQUIRED_PROMPTS = (
+    "agent",
+    "guardrails_moderation",
+    "memory_consolidation",
+    "memory_classifier",
+)
+
 # Tolérance sur la somme des poids (flottants : 0.3 + 0.4 + 0.3 != 1.0 exactement).
 _SUM_TOLERANCE = 1e-9
 
@@ -34,6 +43,7 @@ class Manifest:
     version: str
     threshold: float
     weights: dict[str, float]
+    prompts: dict[str, str]
 
 
 def load_manifest(path: Path | None = None) -> Manifest:
@@ -69,4 +79,20 @@ def load_manifest(path: Path | None = None) -> Manifest:
             "(sinon la note globale n'est plus comparable au seuil)."
         )
 
-    return Manifest(version=str(version), threshold=float(threshold), weights=weights)
+    raw_prompts = data.get("prompts") or {}
+    prompts: dict[str, str] = {}
+    for name in _REQUIRED_PROMPTS:
+        declared = raw_prompts.get(name)
+        if not declared:
+            raise ValueError(
+                f"Manifeste : version de prompt manquante pour « {name} » "
+                "(chaque prompt doit être versionné pour rester traçable)."
+            )
+        prompts[name] = str(declared)
+
+    return Manifest(
+        version=str(version),
+        threshold=float(threshold),
+        weights=weights,
+        prompts=prompts,
+    )

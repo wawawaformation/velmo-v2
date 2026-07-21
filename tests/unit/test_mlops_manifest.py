@@ -23,6 +23,11 @@ weights:
   memory: 0.2
   guardrails: 0.5
   quality: 0.3
+prompts:
+  agent: "1.1.0"
+  guardrails_moderation: "1.0.0"
+  memory_consolidation: "1.0.0"
+  memory_classifier: "1.0.0"
 """
 
 
@@ -38,6 +43,26 @@ def test_load_manifest_reads_version_threshold_and_weights(tmp_path):
     assert manifest.version == "2.1.0"
     assert manifest.threshold == 0.75
     assert manifest.weights == {"memory": 0.2, "guardrails": 0.5, "quality": 0.3}
+
+
+def test_load_manifest_reads_prompt_versions(tmp_path):
+    manifest = load_manifest(_write(tmp_path, _VALID))
+
+    assert manifest.prompts["agent"] == "1.1.0"
+    assert set(manifest.prompts) == {
+        "agent",
+        "guardrails_moderation",
+        "memory_consolidation",
+        "memory_classifier",
+    }
+
+
+def test_load_manifest_rejects_missing_prompt_version(tmp_path):
+    # Un prompt sans version déclarée casse la traçabilité silencieusement.
+    bad = _VALID.replace('  memory_classifier: "1.0.0"\n', "")
+
+    with pytest.raises(ValueError, match="memory_classifier"):
+        load_manifest(_write(tmp_path, bad))
 
 
 def test_load_manifest_rejects_weights_not_summing_to_one(tmp_path):

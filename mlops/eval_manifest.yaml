@@ -22,3 +22,21 @@ weights:
   memory: 0.3
   guardrails: 0.4
   quality: 0.3
+
+# Version de chaque prompt de l'agent (Réponse 3 : une version de Velmo relie
+# un commit Git ET une version de prompt). À incrémenter quand on modifie le
+# texte correspondant.
+#
+# Ces valeurs sont DÉCLARATIVES : le rapport affiche à côté une empreinte
+# calculée sur le texte réel. Si la version n'a pas bougé mais que l'empreinte
+# a changé, c'est qu'un prompt a été modifié sans être versionné.
+prompts:
+  # src/velmo/agent.py — 1.1.0 : exception « droit à l'oubli » ajoutée.
+  agent: "1.1.0"
+  # src/velmo/guardrails/moderation_llm.py — 1.1.0 : distinction
+  # injection (vise les instructions) / RGPD (vise les données du client).
+  guardrails_moderation: "1.1.0"
+  # src/velmo/memory/consolidation.py
+  memory_consolidation: "1.0.0"
+  # src/velmo/memory/classifier.py
+  memory_classifier: "1.0.0"

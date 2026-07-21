@@ -126,8 +126,28 @@ def write_report(scores: Scores, path: Path) -> None:
 ## Version
 
 Version courante : {current_version()}
+
+### Prompts
+
+Version declaree (manifeste) et empreinte du texte reellement charge. Une
+empreinte qui change sans que la version bouge signale un prompt modifie sans
+avoir ete versionne.
+
+{_render_prompt_versions()}
 """
     path.write_text(report, encoding="utf-8")
+
+
+def _render_prompt_versions() -> str:
+    """Tableau version declaree / empreinte reelle, par prompt."""
+    from .prompts import prompt_fingerprints
+
+    declared = load_manifest().prompts
+    prints = prompt_fingerprints()
+    lines = ["| Prompt | Version | Empreinte |", "|---|---|---|"]
+    for name in sorted(declared):
+        lines.append(f"| {name} | {declared[name]} | `{prints.get(name, '?')}` |")
+    return "\n".join(lines)
 
 
 def current_version() -> str:
