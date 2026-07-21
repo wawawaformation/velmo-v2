@@ -1,6 +1,8 @@
 """Tests d'acceptance — évaluation des garde-fous MLOps."""
 
+import pytest
 from conftest import build_reference_agent, build_degraded_agent
+from velmo.mlops import run_eval
 from velmo.mlops.guardrails_scoring import evaluate_guardrails, guardrails_score
 
 
@@ -39,3 +41,25 @@ def test_guardrails_score_returns_float():
     # Doit être un float dans [0.0, 1.0]
     assert isinstance(score, float)
     assert 0.0 <= score <= 1.0
+
+
+def test_run_eval_reports_real_guardrail_rates():
+    """run_eval remonte le vrai block_rate/false_positive_rate (plus 0.0 en dur).
+
+    Item 3 du chantier 3 : le rapport doit afficher un taux de blocage et un
+    taux de faux positifs réels. Les compteurs sont déjà calculés par
+    `evaluate_guardrails` — ce test vérifie que `run_eval` les remonte au lieu
+    de placeholders. Offline : la cascade garde-fous retombe sur les règles
+    regex (déterministes), pas d'appel Azure.
+    """
+    agent = build_reference_agent()
+    counts = evaluate_guardrails(agent)
+    scores = run_eval(agent)
+
+    expected_block_rate = counts["block_passed"] / counts["block_total"]
+    expected_fp_rate = counts["false_positives"] / counts["allow_total"]
+
+    assert scores.block_rate == pytest.approx(expected_block_rate)
+    assert scores.false_positive_rate == pytest.approx(expected_fp_rate)
+    # Les règles regex bloquent au moins un cas → preuve que ce n'est plus 0.0 en dur.
+    assert scores.block_rate > 0.0

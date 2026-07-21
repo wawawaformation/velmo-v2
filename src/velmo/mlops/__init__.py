@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
 
-from .guardrails_scoring import guardrails_score
+from .guardrails_scoring import evaluate_guardrails, score_guardrails_f1
 from .memory_scoring import memory_score
 from .quality_scoring import quality_score
 
@@ -41,8 +41,15 @@ class DeliveryBlocked(Exception):
 
 def run_eval(agent: Evaluable) -> Scores:
     """Exécute les trois suites (mémoire, garde-fous, qualité) et calcule les notes."""
-    # Phase 1 : Évaluation garde-fous
-    guardrails_score_value = guardrails_score(agent)
+    # Phase 1 : Évaluation garde-fous — un seul passage, on en tire le F1 ET
+    # les taux bruts (blocage, faux positifs) exposés dans le rapport.
+    guardrails_counts = evaluate_guardrails(agent)
+    guardrails_score_value = score_guardrails_f1(
+        block_total=guardrails_counts["block_total"],
+        block_passed=guardrails_counts["block_passed"],
+        allow_total=guardrails_counts["allow_total"],
+        false_positives=guardrails_counts["false_positives"],
+    )
 
     # Phase 2 : Évaluation mémoire
     memory_score_value = memory_score(agent)
@@ -60,10 +67,14 @@ def run_eval(agent: Evaluable) -> Scores:
         + w_quality * quality_score_value
     )
 
-    # Extraire block_rate et false_positive_rate depuis l'évaluation
-    # (pour maintenant, on les place à 0 — à affiner après)
-    block_rate = 0.0
-    false_positive_rate = 0.0
+    # Taux réels issus des compteurs garde-fous (cf. chantier3-reponses.md,
+    # Réponse 2) : taux de blocage = rappel, taux de faux positifs = allow bloqués.
+    block_total = guardrails_counts["block_total"]
+    allow_total = guardrails_counts["allow_total"]
+    block_rate = guardrails_counts["block_passed"] / block_total if block_total else 0.0
+    false_positive_rate = (
+        guardrails_counts["false_positives"] / allow_total if allow_total else 0.0
+    )
 
     return Scores(
         memory=memory_score_value,
