@@ -49,8 +49,18 @@ jobs:
       - name: Set up Python
         run: uv python install 3.11
 
+      # feature n'a besoin ni de vrais embeddings (Chroma non joignable, tests
+      # unitaires hors-ligne) ni du vrai LLM Azure : `sentence-transformers`
+      # tire torch/CUDA (~2,5 Go), inutile ici et source de lenteur/collisions
+      # avec `cancel-in-progress`. dev/main gardent tous les extras (vrai
+      # Chroma + vrais embeddings).
       - name: Install dependencies
-        run: uv sync --all-extras
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/dev" || "${{ github.ref }}" == "refs/heads/main" ]]; then
+            uv sync --all-extras
+          else
+            uv sync --extra llm --extra vector --extra api
+          fi
 
       # Etage 1: fail fast et gratuit
       - name: Lint (ruff)

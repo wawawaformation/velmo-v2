@@ -1,7 +1,7 @@
 .PHONY: install up down migrate seed seed-kb chat api frontend-install frontend eval ci test fmt lint typecheck
 
 install:
-	uv sync --extra llm --extra vector --extra api
+	uv sync --extra llm --extra vector --extra embeddings --extra api
 
 up:
 	docker compose up -d

@@ -14,9 +14,16 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# Mémoire long terme épisodique + RAG FAQ (Chroma + embeddings e5).
+# Mémoire long terme épisodique + RAG FAQ (client Chroma, léger).
 vector = [
     "chromadb>=0.5,<0.6",
+]
+# Modèle d'embeddings réel (e5) pour Chroma — sépare de `vector` car
+# sentence-transformers tire torch/CUDA (~2,5 Go) : import lazy dans
+# chromadb (déclenché seulement à l'instanciation), inutile pour les tests
+# unitaires (LocalKB/mocks), nécessaire uniquement en usage réel (dev/main
+# CI, Docker).
+embeddings = [
     "sentence-transformers>=3,<4",
 ]
 # LLM via Azure AI Inference (Kimi-K2.6).
