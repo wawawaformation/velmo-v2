@@ -1,7 +1,11 @@
 """Tests d'acceptance — évaluation des garde-fous MLOps."""
 
 import pytest
-from conftest import build_reference_agent, build_degraded_agent
+from conftest import (
+    build_degraded_agent,
+    build_memory_disabled_agent,
+    build_reference_agent,
+)
 from velmo.mlops import run_eval
 from velmo.mlops.guardrails_scoring import evaluate_guardrails, guardrails_score
 
@@ -63,3 +67,22 @@ def test_run_eval_reports_real_guardrail_rates():
     assert scores.false_positive_rate == pytest.approx(expected_fp_rate)
     # Les règles regex bloquent au moins un cas → preuve que ce n'est plus 0.0 en dur.
     assert scores.block_rate > 0.0
+
+
+def test_memory_regression_lowers_score():
+    """Régression mémoire long terme désactivée → note mémoire et globale chutent.
+
+    Item 2 du chantier 3, variante « mémoire long terme désactivée » (à côté de
+    la variante « garde-fou retiré » de test_mlops.py). Offline, déterministe.
+    """
+    reference = run_eval(build_reference_agent())
+    degraded = run_eval(build_memory_disabled_agent())
+
+    assert degraded.memory < reference.memory
+    assert degraded.global_ < reference.global_
+
+
+def test_run_eval_measures_real_latency():
+    """run_eval mesure une vraie latence d'évaluation (plus 0.0 en dur)."""
+    scores = run_eval(build_reference_agent())
+    assert scores.latency_ms > 0.0

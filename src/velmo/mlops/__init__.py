@@ -6,6 +6,7 @@ L'exécution des suites, le calcul de la note et la production du rapport sont �
 
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
@@ -41,6 +42,8 @@ class DeliveryBlocked(Exception):
 
 def run_eval(agent: Evaluable) -> Scores:
     """Exécute les trois suites (mémoire, garde-fous, qualité) et calcule les notes."""
+    started = time.perf_counter()
+
     # Phase 1 : Évaluation garde-fous — un seul passage, on en tire le F1 ET
     # les taux bruts (blocage, faux positifs) exposés dans le rapport.
     guardrails_counts = evaluate_guardrails(agent)
@@ -76,6 +79,11 @@ def run_eval(agent: Evaluable) -> Scores:
         guardrails_counts["false_positives"] / allow_total if allow_total else 0.0
     )
 
+    # Latence réelle : durée totale de l'évaluation (dominée par les appels
+    # `agent.respond` des suites mémoire/qualité). Le coût par conversation
+    # reste à 0.0 (tracké par Langfuse en prod, cf. chantier3-reponses.md R4).
+    latency_ms = (time.perf_counter() - started) * 1000
+
     return Scores(
         memory=memory_score_value,
         guardrails=guardrails_score_value,
@@ -83,7 +91,7 @@ def run_eval(agent: Evaluable) -> Scores:
         global_=global_score,
         block_rate=block_rate,
         false_positive_rate=false_positive_rate,
-        latency_ms=0.0,
+        latency_ms=latency_ms,
         cost=0.0,
     )
 
@@ -112,7 +120,7 @@ def write_report(scores: Scores, path: Path) -> None:
 - **Note memoire** : {scores.memory:.2%}
 - **Taux de blocage** : {scores.block_rate:.2%}
 - **Taux de faux positif** : {scores.false_positive_rate:.2%}
-- **Latence moyenne** : {scores.latency_ms:.1f} ms
+- **Latence (evaluation totale)** : {scores.latency_ms:.1f} ms
 - **Cout par conversation** : ${scores.cost:.2f}
 
 ## Version

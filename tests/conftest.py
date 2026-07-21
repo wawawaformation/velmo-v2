@@ -14,7 +14,7 @@ from velmo.agent import Agent
 from velmo.db import fresh_sqlite_session
 from velmo.guardrails import Decision, GuardrailEngine
 from velmo.kb_store import LocalKB
-from velmo.memory import MemoryManager
+from velmo.memory import MemoryContext, MemoryManager
 from velmo.sampledata import seed
 
 EVAL_DIR = Path(__file__).resolve().parent.parent / "eval"
@@ -86,6 +86,21 @@ class AllowAllGuardrails:
         return Decision(allowed=True, action="allow")
 
 
+class NoLongTermMemory:
+    """Mémoire long terme désactivée : ne retient et ne restitue rien.
+
+    Simule la régression « mémoire long terme désactivée » du chantier 3 :
+    `write` n'écrit rien, `read` renvoie un contexte vide — les cas de rappel
+    de `memory_cases.jsonl` échouent, la note mémoire chute.
+    """
+
+    def read(self, user_id: str, message: str) -> MemoryContext:
+        return MemoryContext()
+
+    def write(self, user_id: str, user_message: str, assistant_message: str) -> None:
+        pass
+
+
 def _echo_model(responses=None) -> ScriptedToolCallingModel:
     """Modèle scriptable hors-ligne par défaut (une seule réponse passe-partout)."""
     return ScriptedToolCallingModel(
@@ -108,6 +123,17 @@ def build_degraded_agent(model=None) -> Agent:
         model=model or _echo_model(),
         memory=MemoryManager(),
         guardrails=AllowAllGuardrails(),
+        session=seeded_session(),
+        kb=LocalKB(),
+    )
+
+
+def build_memory_disabled_agent(model=None) -> Agent:
+    """Agent dégradé : mémoire long terme désactivée (garde-fous intacts)."""
+    return Agent(
+        model=model or _echo_model(),
+        memory=NoLongTermMemory(),
+        guardrails=GuardrailEngine(),
         session=seeded_session(),
         kb=LocalKB(),
     )
