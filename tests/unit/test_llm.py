@@ -28,6 +28,21 @@ def test_get_chat_model_returns_azure_chat_model_when_configured(monkeypatch):
     assert isinstance(model, AzureAIOpenAIApiChatModel)
 
 
+def test_get_chat_model_sets_temperature_when_requested(monkeypatch):
+    # `conception/LMOPS/chantier3-reponses.md` (Réponse 2) retient
+    # `temperature=0` en évaluation, et écarte le rejeu 3-5× des cas
+    # *parce que* la température est à 0. Sans ça, la note varie d'un run à
+    # l'autre sans changement de code (observé : qualité 0.875 → 0.750 → 0.625)
+    # et le gate CI peut basculer sur du bruit.
+    monkeypatch.setenv("AZURE_AI_INFERENCE_ENDPOINT", "https://example.invalid")
+    monkeypatch.setenv("AZURE_AI_INFERENCE_API_KEY", "fake-key")
+    monkeypatch.setenv("AZURE_AI_INFERENCE_MODEL", "gpt-5.4")
+
+    assert get_chat_model(temperature=0).temperature == 0
+    # Sans argument, on ne force rien (production inchangée).
+    assert get_chat_model().temperature is None
+
+
 def test_get_classifier_llm_disables_automatic_retries(monkeypatch):
     # Bug réel observé : le SDK OpenAI retente 2 fois par défaut (max_retries=2).
     # Avec LLM_TIMEOUT_SECONDS=15 par tentative, un échec systématique peut

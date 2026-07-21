@@ -32,7 +32,11 @@ SYSTEM_PROMPT = (
     "changement de taille, retour, remboursement), tu dois demander une confirmation "
     "explicite au client et ne PAS appeler l'outil correspondant tant que le message "
     "du client ne contient pas à la fois l'intention et une formule de confirmation "
-    "(« je confirme », « oui, vas-y », etc.) dans le MÊME message."
+    "(« je confirme », « oui, vas-y », etc.) dans le MÊME message.\n\n"
+    "Exception : le droit à l'oubli. Si le client demande d'oublier une information "
+    "le concernant (« oublie mon adresse », « oublie mon numéro de commande »), "
+    "appelle immédiatement l'outil `forget_memory` avec l'information visée, SANS "
+    "demander de confirmation — c'est un droit RGPD, pas une action à négocier."
 )
 
 
@@ -47,7 +51,7 @@ class Agent:
         self.kb = kb
 
     def respond(self, user_id: str, message: str) -> str:
-        tools_list = bound_tools(self.session, user_id, self.kb)
+        tools_list = bound_tools(self.session, user_id, self.kb, self.memory)
         graph = create_agent(
             model=self.model,
             tools=tools_list,
@@ -64,8 +68,12 @@ class Agent:
         return result["messages"][-1].content
 
 
-def build_default_agent(session=None, kb=None) -> Agent:
-    """Assemble un agent avec composants par défaut, base et FAQ."""
+def build_default_agent(session=None, kb=None, temperature: float | None = None) -> Agent:
+    """Assemble un agent avec composants par défaut, base et FAQ.
+
+    `temperature` est transmis à `get_chat_model()` : `None` en production
+    (défaut du modèle), `0` pour l'évaluation MLOps (note reproductible).
+    """
     from .db import session_factory
     from .kb_store import get_kb
     from .llm import get_chat_model
@@ -74,7 +82,7 @@ def build_default_agent(session=None, kb=None) -> Agent:
         session = session_factory()()
     if kb is None:
         kb = get_kb()
-    model = get_chat_model()
+    model = get_chat_model(temperature=temperature)
     if model is None:
         raise RuntimeError(
             "Identifiants Azure requis pour démarrer l'agent — configurez "

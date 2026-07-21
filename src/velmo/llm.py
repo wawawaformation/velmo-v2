@@ -123,24 +123,37 @@ def get_llm() -> LLM:
     return LangChainAdapter(llm)
 
 
-def get_chat_model():
+def get_chat_model(temperature: float | None = None):
     """Construit le vrai `BaseChatModel` Azure pour `create_agent()`, ou `None`.
 
     Distinct de `get_llm()` : `create_agent()` (tool-calling natif LangGraph)
     exige un `BaseChatModel` réel, pas le Protocol `LLM`/repli `EchoLLM` —
     un faux modèle ne peut pas décider quels outils appeler.
+
+    `temperature` : laissé à `None` en production (défaut du modèle). Les
+    suites d'évaluation passent `0` pour que la note soit reproductible d'un
+    run à l'autre — sans quoi le gate CI peut basculer sur du bruit
+    (cf. `conception/LMOPS/chantier3-reponses.md`, Réponse 2).
     """
     if not os.getenv("AZURE_AI_INFERENCE_ENDPOINT"):
         return None
 
     from langchain_azure_ai.chat_models import AzureAIOpenAIApiChatModel
 
-    return AzureAIOpenAIApiChatModel(
+    model = AzureAIOpenAIApiChatModel(
         endpoint=os.environ["AZURE_AI_INFERENCE_ENDPOINT"],
         credential=os.environ["AZURE_AI_INFERENCE_API_KEY"],
         model=os.environ.get("AZURE_AI_INFERENCE_MODEL", "gpt-5.4"),
         timeout=LLM_TIMEOUT_SECONDS,
     )
+    if temperature is not None:
+        # `AzureAIOpenAIApiChatModel` avale silencieusement `temperature` passé
+        # au constructeur (`ConfigDict(extra="ignore")` + validateur `mode=
+        # "before"` qui reconstruit le dict de valeurs), malgré une docstring
+        # affirmant l'inverse. L'affecter après coup atteint bien
+        # `_default_params`, donc la requête envoyée à Azure.
+        model.temperature = temperature
+    return model
 
 
 def get_classifier_llm() -> LLM:

@@ -12,11 +12,15 @@ from __future__ import annotations
 
 from langchain_core.tools import tool
 
-from . import catalog, kb, orders, refunds, returns
+from . import catalog, kb, memory as memory_tools, orders, refunds, returns
 
 
-def bound_tools(session, user_id: str, kb_store) -> list:
-    """Construit la liste des outils exposés au LLM pour un utilisateur donné."""
+def bound_tools(session, user_id: str, kb_store, memory=None) -> list:
+    """Construit la liste des outils exposés au LLM pour un utilisateur donné.
+
+    `memory` est optionnel : sans gestionnaire de mémoire, l'outil d'oubli
+    (`forget_memory`) n'est pas exposé — il n'aurait rien à purger.
+    """
 
     @tool
     def get_order(order_id: str) -> dict:
@@ -63,7 +67,21 @@ def bound_tools(session, user_id: str, kb_store) -> list:
         """Cherche une réponse dans la FAQ Velmo et renvoie des extraits sourcés."""
         return kb.search_kb(kb_store, query)
 
-    return [
+    @tool
+    def forget_memory(target: str) -> dict:
+        """Oublie definitivement une information memorisee sur le client (RGPD).
+
+        `target` : l'information a oublier, telle que citee par le client
+        (ex. « adresse », « O-2024-0199 », « pointure »).
+
+        Renvoie `action="forgotten"` avec le nombre d'elements supprimes, ou
+        `action="not_found"` si rien ne correspondait. Dans ce dernier cas, ne
+        confirme PAS une suppression au client : dis-lui que tu n'as rien
+        trouve de tel en memoire.
+        """
+        return memory_tools.forget_memory(memory, user_id, target)
+
+    tools = [
         get_order,
         track_shipment,
         update_order_item,
@@ -74,3 +92,6 @@ def bound_tools(session, user_id: str, kb_store) -> list:
         check_stock,
         search_kb,
     ]
+    if memory is not None:
+        tools.append(forget_memory)
+    return tools

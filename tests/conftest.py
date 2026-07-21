@@ -56,7 +56,9 @@ def real_model():
     from velmo.llm import get_chat_model
 
     load_dotenv()
-    model = get_chat_model()
+    # temperature=0 : note reproductible d'un run à l'autre (Réponse 2 du
+    # dossier de conception) — sans ça la note varie sans changement de code.
+    model = get_chat_model(temperature=0)
     if model is None:
         pytest.skip("Identifiants Azure requis pour l'évaluation MLOps (vrai agent)")
     return model

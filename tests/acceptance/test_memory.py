@@ -107,3 +107,38 @@ def test_agent_injects_memory_context_into_llm_fallback():
     second_turn_messages = model.captured_messages[-1]
     system_messages = [m for m in second_turn_messages if isinstance(m, SystemMessage)]
     assert any("50 ans" in m.content for m in system_messages)
+
+
+def test_agent_forgets_on_user_request():
+    # Critère R5 par la voie CONVERSATIONNELLE : « oublie mon adresse » doit
+    # réellement purger. Les autres tests R5 appellent `MemoryManager.forget()`
+    # directement en Python ; l'agent, lui, n'avait aucun outil pour honorer la
+    # demande — les 2 cas d'oubli de `memory_cases.jsonl` échouaient (note
+    # mémoire plafonnée à 0.83, y compris avec le vrai modèle).
+    from conftest import build_reference_agent
+    from support.fake_chat_model import ScriptedToolCallingModel
+
+    model = ScriptedToolCallingModel(
+        responses=[
+            AIMessage("C'est noté."),
+            AIMessage(
+                content="",
+                tool_calls=[
+                    {
+                        "name": "forget_memory",
+                        "args": {"target": "rue des Lilas"},
+                        "id": "call_forget",
+                    }
+                ],
+            ),
+            AIMessage("C'est oublié."),
+        ]
+    )
+    agent = build_reference_agent(model=model)
+    user = "acc-forget-agent"
+
+    agent.respond(user, "Mon adresse est 12 rue des Lilas a Paris.")
+    assert "rue des Lilas" in agent.memory.read(user, "adresse").render()
+
+    agent.respond(user, "Oublie mon adresse de livraison s'il te plait.")
+    assert "rue des Lilas" not in agent.memory.read(user, "adresse").render()

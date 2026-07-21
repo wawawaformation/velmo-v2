@@ -74,7 +74,9 @@ def main() -> int:
 
     from ..agent import build_default_agent
 
-    agent = build_default_agent()
+    # temperature=0 : la note doit être reproductible d'un run à l'autre, sinon
+    # le gate CI bascule sur du bruit (cf. chantier3-reponses.md, Réponse 2).
+    agent = build_default_agent(temperature=0)
     try:
         run_and_report(agent, DEFAULT_REPORT_PATH, min_score)
     except DeliveryBlocked as exc:
