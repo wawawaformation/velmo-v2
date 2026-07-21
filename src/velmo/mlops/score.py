@@ -12,7 +12,6 @@ n'échoue pas le gate (sortie 0 avec avertissement), même convention que
 from __future__ import annotations
 
 import logging
-import os
 import sys
 from pathlib import Path
 
@@ -24,12 +23,12 @@ from . import (
     run_eval,
     write_report,
 )
+from .manifest import load_manifest
 
 log = logging.getLogger("velmo.mlops.score")
 
 # Chemin exigé par le brief (item 3) et les tests d'acceptance.
 DEFAULT_REPORT_PATH = Path("mlops/report.md")
-DEFAULT_MIN_SCORE = 0.8
 
 
 def run_and_report(agent, report_path: Path, min_score: float) -> Scores:
@@ -70,7 +69,8 @@ def main() -> int:
 
     load_dotenv()
 
-    min_score = float(os.getenv("EVAL_MIN_SCORE", str(DEFAULT_MIN_SCORE)))
+    # Seuil lu dans le manifeste (source de vérité unique, versionnée en Git).
+    min_score = load_manifest().threshold
 
     from ..agent import build_default_agent
 

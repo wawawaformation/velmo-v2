@@ -1,0 +1,24 @@
+# Manifeste d'évaluation Velmo 2.0 — source de vérité unique du gate qualité.
+#
+# Le seuil et les pondérations vivaient auparavant en dur dans le code, les
+# tests et le workflow CI (cinq endroits pour le seul seuil). Les centraliser
+# ici évite qu'un ajustement en oublie un et laisse la CI valider en silence
+# contre l'ancienne valeur.
+#
+# Modifier une valeur de ce fichier est un « patch » au sens du versionnage
+# retenu (conception/LMOPS/chantier3-reponses.md, Réponse 3) : paramètre
+# ajusté, logique inchangée.
+
+# Version de l'agent évaluée, reportée dans mlops/report.md.
+version: "2.0.0"
+
+# Note globale minimale pour autoriser la livraison.
+# Sous ce seuil, `python -m velmo.mlops.score` sort en erreur et la CI échoue.
+threshold: 0.8
+
+# Pondération de la note globale — doit sommer à 1 (vérifié au chargement).
+# Garde-fous le plus lourd : catégorie « non négociable » du brief.
+weights:
+  memory: 0.3
+  guardrails: 0.4
+  quality: 0.3

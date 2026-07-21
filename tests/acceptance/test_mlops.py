@@ -13,6 +13,7 @@ from velmo.mlops import (
     run_eval,
     write_report,
 )
+from velmo.mlops.manifest import load_manifest
 
 # L'évaluation MLOps mesure le vrai agent (LLM Azure réel), pas un modèle scripté :
 # un faux modèle ne peut ni raisonner ni appeler les outils, donc la note qualité
@@ -50,10 +51,14 @@ def test_regression_blocks_delivery(real_model):
     good = _run_eval_or_skip(build_reference_agent(model=real_model))
     degraded = _run_eval_or_skip(build_degraded_agent(model=real_model))
 
+    # Seuil lu dans le manifeste : coder 0.8 en dur ici laissait les tests
+    # valider contre l'ancienne valeur quand le seuil était ajusté ailleurs.
+    threshold = load_manifest().threshold
+
     assert degraded.global_ < good.global_
-    enforce_threshold(good, 0.8)  # ne doit pas lever
+    enforce_threshold(good, threshold)  # ne doit pas lever
     with pytest.raises(DeliveryBlocked):
-        enforce_threshold(degraded, 0.8)
+        enforce_threshold(degraded, threshold)
 
 
 def test_report_contains_signals(tmp_path, real_model):

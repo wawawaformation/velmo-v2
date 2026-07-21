@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Protocol
 
 from .guardrails_scoring import evaluate_guardrails, score_guardrails_f1
+from .manifest import load_manifest
 from .memory_scoring import memory_score
 from .quality_scoring import quality_score
 
@@ -60,14 +61,13 @@ def run_eval(agent: Evaluable) -> Scores:
     # Phase 3 : Évaluation qualité (vrai agent : réponses métier réelles)
     quality_score_value = quality_score(agent)
 
-    # Pondération : garde-fous plus lourd (0.4), mémoire et qualité (0.3 chacun)
-    w_memory = 0.3
-    w_guardrails = 0.4
-    w_quality = 0.3
+    # Pondération lue dans le manifeste (source de vérité unique, somme validée
+    # à 1 au chargement) — garde-fous le plus lourd, catégorie « non négociable ».
+    weights = load_manifest().weights
     global_score = (
-        w_memory * memory_score_value
-        + w_guardrails * guardrails_score_value
-        + w_quality * quality_score_value
+        weights["memory"] * memory_score_value
+        + weights["guardrails"] * guardrails_score_value
+        + weights["quality"] * quality_score_value
     )
 
     # Taux réels issus des compteurs garde-fous (cf. chantier3-reponses.md,
@@ -131,5 +131,5 @@ Version courante : {current_version()}
 
 
 def current_version() -> str:
-    """Renvoie la version courante de l'agent évaluée."""
-    return "2.0.0"
+    """Renvoie la version courante de l'agent évaluée (manifeste)."""
+    return load_manifest().version

@@ -86,7 +86,6 @@ jobs:
           AZURE_AI_INFERENCE_MODEL: ${{ secrets.AZURE_AI_INFERENCE_MODEL }}
           AZURE_AI_CLASSIFIER_MODEL: ${{ secrets.AZURE_AI_CLASSIFIER_MODEL }}
           AZURE_CONTENT_SAFETY_ENDPOINT: ${{ secrets.AZURE_CONTENT_SAFETY_ENDPOINT }}
-          EVAL_MIN_SCORE: "0.8"
         run: |
           if [[ "${{ github.ref }}" == "refs/heads/dev" || "${{ github.ref }}" == "refs/heads/main" ]]; then
             export CHROMA_URL=http://localhost:8001
@@ -97,7 +96,7 @@ jobs:
           fi
 
       # Etage 3 (dev/main) : éval du vrai agent → journalise la note, écrit
-      # mlops/report.md, bloque sous le seuil (EVAL_MIN_SCORE). Résilient : un
+      # mlops/report.md, bloque sous le seuil du manifeste. Résilient : un
       # incident infra Azure (429/timeout) sort en 0 sans produire de rapport.
       - name: MLOps eval report
         if: github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main'
@@ -107,7 +106,6 @@ jobs:
           AZURE_AI_INFERENCE_MODEL: ${{ secrets.AZURE_AI_INFERENCE_MODEL }}
           AZURE_AI_CLASSIFIER_MODEL: ${{ secrets.AZURE_AI_CLASSIFIER_MODEL }}
           AZURE_CONTENT_SAFETY_ENDPOINT: ${{ secrets.AZURE_CONTENT_SAFETY_ENDPOINT }}
-          EVAL_MIN_SCORE: "0.8"
           CHROMA_URL: http://localhost:8001
           DB_URL: postgresql+psycopg://app:app@localhost:5432/velmo
         run: uv run python -m velmo.mlops.score
