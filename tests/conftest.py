@@ -44,9 +44,12 @@ def _no_real_llm_calls(request, monkeypatch):
         monkeypatch.delenv(var, raising=False)
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def real_model():
     """Vrai modèle Azure pour l'évaluation MLOps ; skip si les creds sont absents.
+
+    Portée module : le modèle est sans état, le reconstruire à chaque test
+    n'apporte rien et empêchait de mutualiser l'évaluation de référence.
 
     Charge `.env` (non chargé automatiquement en test) pour que l'évaluation
     tourne aussi en local, pas seulement en CI où les secrets sont injectés.

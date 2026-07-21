@@ -36,9 +36,21 @@ def _run_eval_or_skip(agent):
         pytest.skip(f"Incident infra Azure (non déterministe, hors régression) : {exc}")
 
 
-def test_scores_produced_and_versioned(real_model):
+@pytest.fixture(scope="module")
+def reference_scores(real_model):
+    """Évaluation de l'agent de référence, calculée UNE fois pour tout le module.
+
+    Elle était refaite dans chacun des trois tests : quatre évaluations réelles
+    par run CI (~3,5 min chacune) pour un résultat identique — et autant
+    d'appels qui saturaient le quota Azure (429 récurrents). Depuis
+    `temperature=0`, ce résultat est déterministe : le mutualiser est sûr.
+    """
+    return _run_eval_or_skip(build_reference_agent(model=real_model))
+
+
+def test_scores_produced_and_versioned(reference_scores):
     # Critère : note globale + notes mémoire / garde-fous / qualité, versionnées.
-    scores = _run_eval_or_skip(build_reference_agent(model=real_model))
+    scores = reference_scores
     assert scores.global_ is not None and 0.0 <= scores.global_ <= 1.0
     assert scores.memory is not None
     assert scores.guardrails is not None
@@ -46,9 +58,9 @@ def test_scores_produced_and_versioned(real_model):
     assert current_version()
 
 
-def test_regression_blocks_delivery(real_model):
+def test_regression_blocks_delivery(reference_scores, real_model):
     # Critère : une régression fait chuter la note et bloque la livraison.
-    good = _run_eval_or_skip(build_reference_agent(model=real_model))
+    good = reference_scores
     degraded = _run_eval_or_skip(build_degraded_agent(model=real_model))
 
     # Seuil lu dans le manifeste : coder 0.8 en dur ici laissait les tests
@@ -61,9 +73,9 @@ def test_regression_blocks_delivery(real_model):
         enforce_threshold(degraded, threshold)
 
 
-def test_report_contains_signals(tmp_path, real_model):
+def test_report_contains_signals(tmp_path, reference_scores):
     # Critère : note mémoire, taux de blocage, taux de faux positifs, latence, coût visibles.
-    scores = _run_eval_or_skip(build_reference_agent(model=real_model))
+    scores = reference_scores
     report = tmp_path / "report.md"
     write_report(scores, report)
 

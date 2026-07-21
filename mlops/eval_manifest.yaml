@@ -31,8 +31,11 @@ weights:
 # calculée sur le texte réel. Si la version n'a pas bougé mais que l'empreinte
 # a changé, c'est qu'un prompt a été modifié sans être versionné.
 prompts:
-  # src/velmo/agent.py — 1.1.0 : exception « droit à l'oubli » ajoutée.
-  agent: "1.1.0"
+  # src/velmo/agent.py
+  #   1.1.0 : exception « droit à l'oubli » ajoutée.
+  #   1.2.0 : consigne de fidélité aux extraits de search_kb (l'agent
+  #           contredisait la KB sur le réassort et extrapolait le délai J+2).
+  agent: "1.2.0"
   # src/velmo/guardrails/moderation_llm.py — 1.1.0 : distinction
   # injection (vise les instructions) / RGPD (vise les données du client).
   guardrails_moderation: "1.1.0"
