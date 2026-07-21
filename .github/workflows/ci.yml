@@ -95,6 +95,22 @@ jobs:
             uv run pytest tests/unit/ -v
           fi
 
+      # L'évaluation interroge le VRAI agent, donc la vraie base : sans seed,
+      # les 8 cas qualité (statut de commande, stock, FAQ) échouent tous et la
+      # note globale tombe à 0.70 — le gate bloque pour une base vide, pas pour
+      # une régression. Les tests pytest, eux, utilisent des fixtures SQLite
+      # seedées et ne révélaient donc pas le problème.
+      # `seed.py` crée le schéma (`Base.metadata.create_all`) et est idempotent.
+      - name: Seed database and knowledge base
+        if: github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main'
+        env:
+          DB_URL: postgresql+psycopg://app:app@localhost:5432/velmo
+          CHROMA_HOST: localhost
+          CHROMA_PORT: "8001"
+        run: |
+          uv run python scripts/seed.py
+          uv run python scripts/seed_kb.py
+
       # Etage 3 (dev/main) : éval du vrai agent → journalise la note, écrit
       # mlops/report.md, bloque sous le seuil du manifeste. Résilient : un
       # incident infra Azure (429/timeout) sort en 0 sans produire de rapport.
