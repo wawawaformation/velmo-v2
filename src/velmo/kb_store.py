@@ -10,6 +10,7 @@ import os
 import re
 import unicodedata
 from pathlib import Path
+from urllib.parse import urlparse
 
 KB_DOCS_DIR = Path(__file__).resolve().parents[2] / "kb" / "docs"
 
@@ -75,17 +76,38 @@ class ChromaKB:
 
 def get_kb():
     """Renvoie le backend Chroma si configuré et disponible, sinon le backend local."""
-    if not os.getenv("CHROMA_URL"):
+    chroma_url = os.getenv("CHROMA_URL")
+    if not chroma_url:
         return LocalKB()
     try:
         import chromadb
-        from chromadb.utils import embedding_functions
+        from chromadb.config import Settings
+
+        from velmo.chroma_embedding import SilentSentenceTransformerEmbeddingFunction
     except ImportError:
         return LocalKB()
 
-    client = chromadb.HttpClient(host="chroma", port=8000)
-    embedder = embedding_functions.SentenceTransformerEmbeddingFunction(
-        model_name=os.getenv("EMBEDDING_MODEL", "intfloat/multilingual-e5-small")
-    )
-    collection = client.get_or_create_collection("velmo_faq", embedding_function=embedder)
+    parsed = urlparse(chroma_url)
+    host = parsed.hostname or "localhost"
+    port = parsed.port or (443 if parsed.scheme == "https" else 8000)
+    ssl = parsed.scheme == "https"
+
+    try:
+        settings = Settings(
+            anonymized_telemetry=False,
+            chroma_product_telemetry_impl="velmo.chroma_telemetry.NoOpProductTelemetry",
+            chroma_telemetry_impl="velmo.chroma_telemetry.NoOpProductTelemetry",
+        )
+        client = chromadb.HttpClient(
+            host=host,
+            port=port,
+            ssl=ssl,
+            settings=settings,
+        )
+        embedder = SilentSentenceTransformerEmbeddingFunction(
+            model_name=os.getenv("EMBEDDING_MODEL", "intfloat/multilingual-e5-small")
+        )
+        collection = client.get_or_create_collection("velmo_faq", embedding_function=embedder)
+    except Exception:
+        return LocalKB()
     return ChromaKB(collection)

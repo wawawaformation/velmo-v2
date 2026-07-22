@@ -7,15 +7,64 @@ from pathlib import Path
 
 import pytest
 
+from langchain_core.messages import AIMessage
+
+from support.fake_chat_model import ScriptedToolCallingModel
 from velmo.agent import Agent
 from velmo.db import fresh_sqlite_session
 from velmo.guardrails import Decision, GuardrailEngine
 from velmo.kb_store import LocalKB
-from velmo.llm import EchoLLM
-from velmo.memory import MemoryManager
+from velmo.memory import MemoryContext, MemoryManager
 from velmo.sampledata import seed
 
 EVAL_DIR = Path(__file__).resolve().parent.parent / "eval"
+
+_AZURE_ENV_VARS = (
+    "AZURE_AI_INFERENCE_ENDPOINT",
+    "AZURE_AI_INFERENCE_API_KEY",
+    "AZURE_AI_INFERENCE_MODEL",
+    "AZURE_AI_CLASSIFIER_MODEL",
+)
+
+
+@pytest.fixture(autouse=True)
+def _no_real_llm_calls(request, monkeypatch):
+    """Neutralise les identifiants Azure pour forcer le repli `EchoLLM` (tests hors-ligne).
+
+    Sans ceci, `get_classifier_llm()`/`get_llm()` appellent le vrai Azure dès que ces
+    variables sont présentes dans l'environnement (ex. via `.env`), rendant les tests
+    lents (appels réseau réels) et non déterministes.
+
+    Exception : les tests marqués `real_llm` évaluent le vrai agent (suite MLOps
+    qualité) et doivent conserver les identifiants Azure.
+    """
+    if request.node.get_closest_marker("real_llm"):
+        return
+    for var in _AZURE_ENV_VARS:
+        monkeypatch.delenv(var, raising=False)
+
+
+@pytest.fixture(scope="module")
+def real_model():
+    """Vrai modèle Azure pour l'évaluation MLOps ; skip si les creds sont absents.
+
+    Portée module : le modèle est sans état, le reconstruire à chaque test
+    n'apporte rien et empêchait de mutualiser l'évaluation de référence.
+
+    Charge `.env` (non chargé automatiquement en test) pour que l'évaluation
+    tourne aussi en local, pas seulement en CI où les secrets sont injectés.
+    """
+    from dotenv import load_dotenv
+
+    from velmo.llm import get_chat_model
+
+    load_dotenv()
+    # temperature=0 : note reproductible d'un run à l'autre (Réponse 2 du
+    # dossier de conception) — sans ça la note varie sans changement de code.
+    model = get_chat_model(temperature=0)
+    if model is None:
+        pytest.skip("Identifiants Azure requis pour l'évaluation MLOps (vrai agent)")
+    return model
 
 
 def load_jsonl(name: str) -> list[dict]:
@@ -42,9 +91,31 @@ class AllowAllGuardrails:
         return Decision(allowed=True, action="allow")
 
 
-def build_reference_agent() -> Agent:
+class NoLongTermMemory:
+    """Mémoire long terme désactivée : ne retient et ne restitue rien.
+
+    Simule la régression « mémoire long terme désactivée » du chantier 3 :
+    `write` n'écrit rien, `read` renvoie un contexte vide — les cas de rappel
+    de `memory_cases.jsonl` échouent, la note mémoire chute.
+    """
+
+    def read(self, user_id: str, message: str) -> MemoryContext:
+        return MemoryContext()
+
+    def write(self, user_id: str, user_message: str, assistant_message: str) -> None:
+        pass
+
+
+def _echo_model(responses=None) -> ScriptedToolCallingModel:
+    """Modèle scriptable hors-ligne par défaut (une seule réponse passe-partout)."""
+    return ScriptedToolCallingModel(
+        responses=responses or [AIMessage("[velmo] J'ai bien reçu votre message.")]
+    )
+
+
+def build_reference_agent(model=None) -> Agent:
     return Agent(
-        llm=EchoLLM(),
+        model=model or _echo_model(),
         memory=MemoryManager(),
         guardrails=GuardrailEngine(),
         session=seeded_session(),
@@ -52,11 +123,22 @@ def build_reference_agent() -> Agent:
     )
 
 
-def build_degraded_agent() -> Agent:
+def build_degraded_agent(model=None) -> Agent:
     return Agent(
-        llm=EchoLLM(),
+        model=model or _echo_model(),
         memory=MemoryManager(),
         guardrails=AllowAllGuardrails(),
+        session=seeded_session(),
+        kb=LocalKB(),
+    )
+
+
+def build_memory_disabled_agent(model=None) -> Agent:
+    """Agent dégradé : mémoire long terme désactivée (garde-fous intacts)."""
+    return Agent(
+        model=model or _echo_model(),
+        memory=NoLongTermMemory(),
+        guardrails=GuardrailEngine(),
         session=seeded_session(),
         kb=LocalKB(),
     )

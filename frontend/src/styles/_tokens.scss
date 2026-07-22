@@ -1,0 +1,50 @@
+// Tokens de couleur — repris du wireframe validé (voir docs/ pour le contexte).
+// Palette : neutres bleu-vert légèrement teintés, accent vert-bleu unique,
+// warning orange dédié (distinct de l'accent) pour la mention transparence IA.
+
+:root {
+  --bg: #f4f6f6;
+  --surface: #ffffff;
+  --border: #d8dfdf;
+  --text: #1c2626;
+  --text-muted: #5c6b6b;
+  --accent: #0f6b5c;
+  --accent-contrast: #ffffff;
+  --danger: #b3261e;
+  --danger-bg: #fbeceb;
+  --warning: #c76a1c;
+  --warning-bg: #fdf1e5;
+  --radius: 6px;
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Consolas, monospace;
+}
+
+:root[data-theme="dark"] {
+  --bg: #12191a;
+  --surface: #1a2324;
+  --border: #2c3a3a;
+  --text: #e7eeee;
+  --text-muted: #93a3a3;
+  --accent: #4fb8a3;
+  --accent-contrast: #0a1413;
+  --danger: #ff8a80;
+  --danger-bg: #2e1a19;
+  --warning: #e08a3f;
+  --warning-bg: #322213;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12191a;
+    --surface: #1a2324;
+    --border: #2c3a3a;
+    --text: #e7eeee;
+    --text-muted: #93a3a3;
+    --accent: #4fb8a3;
+    --accent-contrast: #0a1413;
+    --danger: #ff8a80;
+    --danger-bg: #2e1a19;
+    --warning: #e08a3f;
+    --warning-bg: #322213;
+  }
+}

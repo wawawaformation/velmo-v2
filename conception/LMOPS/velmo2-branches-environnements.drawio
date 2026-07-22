@@ -1,0 +1,125 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Branches et environnements" id="branches-env-velmo2">
+    <mxGraphModel dx="900" dy="600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1000" pageHeight="800" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="title" value="Velmo 2.0 — Branches, environnements et build Docker (build once, promote everywhere)" style="text;html=1;align=left;verticalAlign=middle;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="30" y="10" width="900" height="26" as="geometry" />
+        </mxCell>
+
+        <mxCell id="feature" value="feature/*" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="70" width="220" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="ci1" value="Linter + tests unitaires&#10;boîte blanche" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;align=center;" vertex="1" parent="1">
+          <mxGeometry x="40" y="140" width="220" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="env1" value="dev&#10;(éphémère)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;align=center;" vertex="1" parent="1">
+          <mxGeometry x="40" y="280" width="220" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="e_feature_ci1" value="auto, chaque push" edge="1" parent="1" source="feature" target="ci1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;fontSize=9;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ci1_env1" edge="1" parent="1" source="ci1" target="env1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="dev" value="dev" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="390" y="70" width="220" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="ci2" value="Linter + tests + 3 suites LLM&#10;temperature=0 · boîte noire" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;strokeWidth=2;fontSize=10;align=center;" vertex="1" parent="1">
+          <mxGeometry x="390" y="140" width="220" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="build2" value="🐳 Docker build &amp; tag&#10;velmo-agent:vX.Y.Z" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;align=center;" vertex="1" parent="1">
+          <mxGeometry x="390" y="210" width="220" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="env2" value="staging&#10;intégration" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;align=center;" vertex="1" parent="1">
+          <mxGeometry x="390" y="280" width="220" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="e_dev_ci2" value="merge validé" edge="1" parent="1" source="dev" target="ci2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;fontSize=9;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ci2_build2" value="si seuil respecté" edge="1" parent="1" source="ci2" target="build2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;fontSize=9;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_build2_env2" value="déploie l'image" edge="1" parent="1" source="build2" target="env2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;fontSize=9;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_env1_dev" value="PR" edge="1" parent="1" source="env1" target="dev" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;fontSize=9;exitX=1;exitY=0.2;exitDx=0;exitDy=0;entryX=0;entryY=0.8;entryDx=0;entryDy=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="main" value="main" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="740" y="70" width="220" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="ci3" value="Vérif. score staging&#10;+ approbation humaine" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=2;fontSize=10;align=center;" vertex="1" parent="1">
+          <mxGeometry x="740" y="140" width="220" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="build3" value="🐳 Promotion (retag :prod)&#10;même image, pas de rebuild" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;align=center;" vertex="1" parent="1">
+          <mxGeometry x="740" y="210" width="220" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="env3" value="production&#10;tag major.minor.patch" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;align=center;" vertex="1" parent="1">
+          <mxGeometry x="740" y="280" width="220" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="e_main_ci3" value="merge validé" edge="1" parent="1" source="main" target="ci3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;fontSize=9;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ci3_build3" edge="1" parent="1" source="ci3" target="build3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_build3_env3" edge="1" parent="1" source="build3" target="env3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_env2_main" value="PR" edge="1" parent="1" source="env2" target="main" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;fontSize=9;exitX=1;exitY=0.2;exitDx=0;exitDy=0;entryX=0;entryY=0.8;entryDx=0;entryDy=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e_reuse" value="même image" edge="1" parent="1" source="build2" target="build3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;strokeColor=#9673a6;fontColor=#9673a6;fontSize=9;endArrow=block;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="langfuse" value="Langfuse : chaque environnement = son propre suivi (traces, scores, coût, latence)" style="text;html=1;align=left;verticalAlign=top;fontSize=10;fontStyle=2;fontColor=#4D4D4D;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="40" y="350" width="900" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="note" value="Build once, promote everywhere : l'image Docker est construite UNE fois (en staging) et re-taguée pour prod — jamais reconstruite." style="text;html=1;align=left;verticalAlign=top;fontSize=10;fontStyle=2;fontColor=#4D4D4D;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="40" y="380" width="900" height="24" as="geometry" />
+        </mxCell>
+
+        <mxCell id="tools_sep" style="endArrow=none;dashed=1;html=1;strokeColor=#cccccc;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="40" y="430" as="sourcePoint" />
+            <mxPoint x="960" y="430" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="tools_title" value="Cas particulier — code CRUD des 9 tools métier (fournis : dataset + seed.py · à coder : les tools)" style="text;html=1;align=left;verticalAlign=middle;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="450" width="700" height="24" as="geometry" />
+        </mxCell>
+
+        <mxCell id="tools_branch" value="feature/tools-*" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="490" width="220" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="tools_ci" value="Linter + tests unitaires&#10;boîte blanche" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;align=center;" vertex="1" parent="1">
+          <mxGeometry x="40" y="560" width="220" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="tools_db" value="🐘 Postgres éphémère&#10;seed.py (fourni) → tests → détruit" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;align=center;" vertex="1" parent="1">
+          <mxGeometry x="330" y="560" width="260" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="e_toolsbranch_ci" value="chaque push" edge="1" parent="1" source="tools_branch" target="tools_ci" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;fontSize=9;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_toolsci_db" edge="1" parent="1" source="tools_ci" target="tools_db" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="tools_note" value="Aucune trace après le run — le dataset fourni par le formateur n'est jamais altéré, quelle que soit la branche." style="text;html=1;align=left;verticalAlign=top;fontSize=10;fontStyle=2;fontColor=#4D4D4D;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="40" y="630" width="900" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="tools_merge" value="Sous-ensemble de feature/* → suit ensuite le même chemin vers dev" style="text;html=1;align=left;verticalAlign=top;fontSize=10;fontStyle=2;fontColor=#4D4D4D;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="40" y="655" width="900" height="24" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

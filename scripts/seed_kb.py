@@ -9,17 +9,21 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 KB_DOCS_DIR = Path(__file__).resolve().parent.parent / "kb" / "docs"
 
 
 def main() -> None:
+    load_dotenv()
+
     import chromadb
     from chromadb.utils import embedding_functions
 
     client = chromadb.HttpClient(
         host=os.getenv("CHROMA_HOST", "chroma"), port=int(os.getenv("CHROMA_PORT", "8000"))
     )
-    embedder = embedding_functions.SentenceTransformerEmbeddingFunction(
+    embedder = embedding_functions.SentenceTransformerEmbeddingFunction(  # type: ignore[attr-defined]
         model_name=os.getenv("EMBEDDING_MODEL", "intfloat/multilingual-e5-small")
     )
     collection = client.get_or_create_collection("velmo_faq", embedding_function=embedder)

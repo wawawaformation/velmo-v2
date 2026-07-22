@@ -2,6 +2,11 @@
 
 from __future__ import annotations
 
+from langchain_core.messages import AIMessage, SystemMessage
+
+from support.fake_chat_model import CapturingToolCallingModel
+from velmo.agent import Agent
+from velmo.guardrails import GuardrailEngine
 from velmo.memory import MemoryManager
 
 
@@ -10,6 +15,7 @@ def test_recall_over_30_turns():
     mm = MemoryManager()
     user = "acc-recall"
     mm.write(user, "Ma commande prioritaire est O-2024-0101.", "C'est noté.")
+    mm.run_pending_job(user)  # distille vers le long terme avant que le fil court terme ne tronque
     for i in range(30):
         mm.write(user, f"Question de suivi {i} sur un maillot.", f"Réponse {i}.")
 
@@ -47,9 +53,92 @@ def test_right_to_be_forgotten():
     mm = MemoryManager()
     user = "acc-forget"
     mm.write(user, "Mon adresse de livraison est 12 rue des Lilas.", "C'est noté.")
+    # Simule le passage du job périodique (cf. choix.md : capture synchrone,
+    # traitement asynchrone) qui classe/route le message vers le long terme.
+    mm.run_pending_job(user)
 
     assert "rue des Lilas" in mm.read(user, "Mon adresse ?").render()
 
     removed = mm.forget(user, "adresse")
     assert removed >= 1
     assert "rue des Lilas" not in mm.read(user, "Mon adresse ?").render()
+
+
+def test_forget_removes_consolidated_episode_even_without_text_match():
+    # R5 : un épisode consolidé doit être purgé par sa clé de consolidation,
+    # pas seulement par correspondance textuelle — le texte nettoyé par le LLM
+    # ne contient pas forcément le mot cible ("pointure" n'apparaît nulle part).
+    from velmo.memory import episodic as episodic_module
+    from velmo.memory import semantic as semantic_module
+
+    mm = MemoryManager()
+    user = "acc-forget-consolidated-episode"
+    semantic_module.set_known_fact(mm._session, user, "pointure", "43")
+    episodic_module.add_episode(
+        mm._session, user, "Chausse du 43", consolidated_key="pointure"
+    )
+
+    removed = mm.forget(user, "pointure")
+
+    assert removed >= 1
+    remaining = episodic_module.list_episodes(mm._session, user, include_consolidated=True)
+    assert remaining == []
+
+
+def test_agent_injects_memory_context_into_llm_fallback():
+    # Non-régression : Agent.respond() doit transmettre le contexte mémoire au
+    # modèle à chaque tour (via MemoryMiddleware.wrap_model_call, qui injecte
+    # le contexte mis en cache dans le prompt système) — vérifié sur la
+    # requête sortante réellement envoyée au modèle, pas sur le texte de
+    # réponse (qui est désormais rédigé librement par le LLM, cf. tool-calling).
+    model = CapturingToolCallingModel(
+        responses=[AIMessage("C'est noté."), AIMessage("Voici ma réponse.")]
+    )
+    agent = Agent(
+        model=model,
+        memory=MemoryManager(),
+        guardrails=GuardrailEngine(),
+    )
+    user = "acc-agent-context"
+
+    agent.respond(user, "Bonjour, j'ai 50 ans, je suis né le 07/09/1975.")
+    agent.respond(user, "Une question quelconque hors commande.")
+
+    second_turn_messages = model.captured_messages[-1]
+    system_messages = [m for m in second_turn_messages if isinstance(m, SystemMessage)]
+    assert any("50 ans" in m.content for m in system_messages)
+
+
+def test_agent_forgets_on_user_request():
+    # Critère R5 par la voie CONVERSATIONNELLE : « oublie mon adresse » doit
+    # réellement purger. Les autres tests R5 appellent `MemoryManager.forget()`
+    # directement en Python ; l'agent, lui, n'avait aucun outil pour honorer la
+    # demande — les 2 cas d'oubli de `memory_cases.jsonl` échouaient (note
+    # mémoire plafonnée à 0.83, y compris avec le vrai modèle).
+    from conftest import build_reference_agent
+    from support.fake_chat_model import ScriptedToolCallingModel
+
+    model = ScriptedToolCallingModel(
+        responses=[
+            AIMessage("C'est noté."),
+            AIMessage(
+                content="",
+                tool_calls=[
+                    {
+                        "name": "forget_memory",
+                        "args": {"target": "rue des Lilas"},
+                        "id": "call_forget",
+                    }
+                ],
+            ),
+            AIMessage("C'est oublié."),
+        ]
+    )
+    agent = build_reference_agent(model=model)
+    user = "acc-forget-agent"
+
+    agent.respond(user, "Mon adresse est 12 rue des Lilas a Paris.")
+    assert "rue des Lilas" in agent.memory.read(user, "adresse").render()
+
+    agent.respond(user, "Oublie mon adresse de livraison s'il te plait.")
+    assert "rue des Lilas" not in agent.memory.read(user, "adresse").render()

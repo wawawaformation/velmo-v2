@@ -1,9 +1,15 @@
 services:
   app:
     build: .
-    image: velmo-v2
     env_file:
       - .env
+    # DB_URL/CHROMA_URL de .env pointent vers localhost (valable depuis
+    # l'hôte) — depuis le réseau Docker interne, il faut les noms de
+    # service. Ces deux variables surchargent .env (environment: prend le
+    # dessus sur env_file).
+    environment:
+      DB_URL: postgresql+psycopg://app:app@postgres:5432/velmo
+      CHROMA_URL: http://chroma:8000
     depends_on:
       postgres:
         condition: service_healthy
@@ -12,6 +18,26 @@ services:
     # Conteneur maintenu actif ; ouvrir le chat avec :
     #   docker compose exec app uv run python -m velmo.cli
     command: ["tail", "-f", "/dev/null"]
+
+  api:
+    build: .
+    env_file:
+      - .env
+    environment:
+      DB_URL: postgresql+psycopg://app:app@postgres:5432/velmo
+      CHROMA_URL: http://chroma:8000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      chroma:
+        condition: service_started
+    ports:
+      - "8000:8000"
+    # Logs (guardrails.log, llm_latency.log, memory.log) visibles depuis
+    # l'hôte, mêmes chemins que l'exécution locale (scripts de démo).
+    volumes:
+      - ./logs:/app/logs
+    command: ["uv", "run", "uvicorn", "velmo.api:app", "--host", "0.0.0.0", "--port", "8000"]
 
   postgres:
     image: postgres:16-alpine
@@ -30,7 +56,7 @@ services:
       retries: 10
 
   chroma:
-    image: chromadb/chroma:latest
+    image: chromadb/chroma:0.5.23
     ports:
       - "8001:8000"
     volumes:

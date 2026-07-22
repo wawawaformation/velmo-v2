@@ -207,6 +207,11 @@ def seed(session) -> None:
         _products(),
         _variants(),
         _orders(),
+    ):
+        session.add_all(batch)
+    session.flush()
+
+    for batch in (
         _order_items(),
         _shipments(),
         _returns(),

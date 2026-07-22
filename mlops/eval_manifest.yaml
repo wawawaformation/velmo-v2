@@ -1,0 +1,45 @@
+# Manifeste d'évaluation Velmo 2.0 — source de vérité unique du gate qualité.
+#
+# Le seuil et les pondérations vivaient auparavant en dur dans le code, les
+# tests et le workflow CI (cinq endroits pour le seul seuil). Les centraliser
+# ici évite qu'un ajustement en oublie un et laisse la CI valider en silence
+# contre l'ancienne valeur.
+#
+# Modifier une valeur de ce fichier est un « patch » au sens du versionnage
+# retenu (conception/LMOPS/chantier3-reponses.md, Réponse 3) : paramètre
+# ajusté, logique inchangée.
+
+# Version de l'agent évaluée, reportée dans mlops/report.md.
+version: "2.0.0"
+
+# Note globale minimale pour autoriser la livraison.
+# Sous ce seuil, `python -m velmo.mlops.score` sort en erreur et la CI échoue.
+threshold: 0.8
+
+# Pondération de la note globale — doit sommer à 1 (vérifié au chargement).
+# Garde-fous le plus lourd : catégorie « non négociable » du brief.
+weights:
+  memory: 0.3
+  guardrails: 0.4
+  quality: 0.3
+
+# Version de chaque prompt de l'agent (Réponse 3 : une version de Velmo relie
+# un commit Git ET une version de prompt). À incrémenter quand on modifie le
+# texte correspondant.
+#
+# Ces valeurs sont DÉCLARATIVES : le rapport affiche à côté une empreinte
+# calculée sur le texte réel. Si la version n'a pas bougé mais que l'empreinte
+# a changé, c'est qu'un prompt a été modifié sans être versionné.
+prompts:
+  # src/velmo/agent.py
+  #   1.1.0 : exception « droit à l'oubli » ajoutée.
+  #   1.2.0 : consigne de fidélité aux extraits de search_kb (l'agent
+  #           contredisait la KB sur le réassort et extrapolait le délai J+2).
+  agent: "1.2.0"
+  # src/velmo/guardrails/moderation_llm.py — 1.1.0 : distinction
+  # injection (vise les instructions) / RGPD (vise les données du client).
+  guardrails_moderation: "1.1.0"
+  # src/velmo/memory/consolidation.py
+  memory_consolidation: "1.0.0"
+  # src/velmo/memory/classifier.py
+  memory_classifier: "1.0.0"

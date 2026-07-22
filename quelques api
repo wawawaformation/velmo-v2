@@ -1,0 +1,26 @@
+https://eagwu-0283-resource.cognitiveservices.azure.com/contentsafety/text:analyze?api-version=2024-09-01
+
+{
+    "blocklistsMatch": [],
+    "categoriesAnalysis": [
+        {
+            "category": "Hate",
+            "severity": 0
+        },
+        {
+            "category": "SelfHarm",
+            "severity": 0
+        },
+        {
+            "category": "Sexual",
+            "severity": 0
+        },
+        {
+            "category": "Violence",
+            "severity": 0
+        }
+    ]
+}
+
+pour la modération c'est text:analyze
+prompt injection c'est text:shieldPrompt

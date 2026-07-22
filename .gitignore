@@ -17,8 +17,11 @@ htmlcov/
 dist/
 build/
 
-# uv
-uv.lock
+# uv — `uv.lock` est volontairement VERSIONNÉ : velmo-v2 est une application,
+# pas une bibliothèque. Le lockfile garantit que la CI installe exactement les
+# versions testées en local, et il alimente le cache de `setup-uv` (sans lui,
+# chaque run retéléchargeait ~2,5 Go de torch/CUDA — la CI l'avertissait :
+# « No file matched to **/uv.lock, the cache will never get invalidated »).
 
 # Env
 .env

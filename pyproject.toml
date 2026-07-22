@@ -9,12 +9,25 @@ dependencies = [
     "sqlalchemy>=2.0,<2.1",
     "psycopg[binary]>=3.1,<3.3",
     "alembic>=1.13,<2",
+    "apscheduler>=3.10,<4",
+    "requests>=2.34.2",
+    # Manifeste d'évaluation (mlops/eval_manifest.yaml). Déclaré explicitement :
+    # pyyaml n'arrivait que transitivement (chromadb, langchain-core...) — si
+    # l'un d'eux s'en passait, le gate qualité cassait en ImportError.
+    "pyyaml>=6,<7",
 ]
 
 [project.optional-dependencies]
-# Mémoire long terme épisodique + RAG FAQ (Chroma + embeddings e5).
+# Mémoire long terme épisodique + RAG FAQ (client Chroma, léger).
 vector = [
     "chromadb>=0.5,<0.6",
+]
+# Modèle d'embeddings réel (e5) pour Chroma — sépare de `vector` car
+# sentence-transformers tire torch/CUDA (~2,5 Go) : import lazy dans
+# chromadb (déclenché seulement à l'instanciation), inutile pour les tests
+# unitaires (LocalKB/mocks), nécessaire uniquement en usage réel (dev/main
+# CI, Docker).
+embeddings = [
     "sentence-transformers>=3,<4",
 ]
 # LLM via Azure AI Inference (Kimi-K2.6).
@@ -23,6 +36,13 @@ llm = [
     "langchain-core>=1.0,<2.0",
     "langchain-azure-ai>=1.0,<2.0",
     "azure-ai-inference>=1.0.0b9",
+]
+# API REST (FastAPI) : couche HTTP au-dessus de Agent.respond(), destinée
+# au futur front Vue.js. httpx requis par fastapi.testclient (tests).
+api = [
+    "fastapi>=0.139.0",
+    "httpx>=0.28.1",
+    "uvicorn[standard]>=0.50.1",
 ]
 
 [dependency-groups]
@@ -43,6 +63,9 @@ packages = ["src/velmo"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src", "tests"]
+markers = [
+    "real_llm: évalue le vrai agent via Azure (skip si identifiants absents)",
+]
 
 [tool.ruff]
 line-length = 100

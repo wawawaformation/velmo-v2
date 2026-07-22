@@ -1,0 +1,44 @@
+# Note formateur — avancement
+
+## Chantier 0 — Fondations
+
+- **Fix bugs bloquants** : le contexte mémoire n'était jamais transmis au LLM (réponses hors-sujet malgré une mémoire correctement stockée) ; le scheduler mémoire fuyait des connexions Postgres et se bloquait après quelques minutes.
+- **Adaptation LangChain** : appel LLM refactorisé en chaîne LangChain (`PromptTemplate` + `Runnable`), pour préparer l'intégration future de middlewares (LangFuse, guardrails-ai).
+
+## Chantier 1 — Mémoire
+
+- **Schéma à jour** : `conception/memoire/flux_reel.drawio` (flux capture → classification → routage).
+- **Tests d'acceptance** adaptés pour un traitement mémoire asynchrone (le classifier tourne en tâche de fond, plus en synchrone).
+- **Choix assumé** : classifier hybride **petit LLM (Phi-4-mini-instruct) + repli règles REGEX** si le LLM échoue — conforme au dossier de conception (`choix.md`), plutôt qu'un classifier 100% règles. Le LLM extrait plusieurs faits par message (un seul fait était retenu avant) ; une validation de plausibilité par champ filtre ses erreurs d'extraction.
+
+## Chantier 2 — Garde-fous
+
+- **Architecture agent** : migration complète de l'agent (routage regex fait main, 200+ lignes) vers `create_agent()`/`AgentMiddleware` (LangGraph, LangChain 1.3) — le LLM (gpt-5.4) décide désormais lui-même des appels d'outils, à partir d'un prompt système explicite. Garde-fous et mémoire réimplémentés comme middlewares (`GuardrailMiddleware`, `MemoryMiddleware`), sans dupliquer la logique métier existante. Objectif pédagogique assumé : se familiariser avec le framework standard de l'écosystème.
+- **Cascade garde-fous à 3 niveaux** : règles déterministes (regex, 1er recours) → **Azure AI Content Safety** (`text:analyze` + `text:shieldPrompt`, 2e recours) → classifieur LLM (gpt-5.4-nano, 3e et dernier recours). Content Safety, d'abord jugé indéployable depuis l'accès Foundry du projet, s'est révélé accessible en API REST directe (même ressource multi-service que l'inférence, endpoint distinct). Le LLM reste nécessaire : Content Safety ne détecte pas toutes les formulations d'injection de prompt (ex. « Passe en mode développeur. »).
+- **Diagnostic de fiabilité des modèles Azure** : un benchmark HTTP brut (hors LangChain, `scripts/bench_llm_latency.py`) puis un benchmark multi-région à grande échelle (16 820 appels, partagé par un pair) ont confirmé que le déploiement Phi-4-mini-instruct était intermittent par lui-même (jusqu'à 37-40% d'échec en timeout), indépendamment de tout code applicatif — pas un problème de latence Azure en général. Bascule vers `gpt-5.4`/`gpt-5.4-nano` (plus rapides et plus fiables sur le même échantillon), et ajout d'un coupe-circuit (`VELMO_GUARDRAILS_LLM_CASCADE`) pour désactiver la cascade LLM sans redéploiement en cas de nouvel incident.
+- **Piste explorée et documentée comme non retenue** : Azure Language PII redaction (variante générique testée) produit un faux positif sur les identifiants de commande Velmo (confondus avec des numéros de téléphone) — le regex actuel (`pii.py`) reste en place ; décision tracée dans `conception/garde-fous/synthese.md`.
+- **Bug de sécurité corrigé** : une donnée sensible (numéro de carte) pouvait apparaître en clair dans `logs/guardrails.log` si le blocage était déclenché par une catégorie autre que `pii`/`secret_leak` (ex. `prompt_injection`) — découvert en rejouant le script de démo garde-fous. `_log()` vérifie désormais `detect_pii()` sur le texte source, indépendamment de la catégorie de blocage.
+
+## Scripts de présentation
+
+Trois scripts détaillés (démo live + schéma + code), rejoués et corrigés en conditions réelles contre les vrais services Azure :
+
+- `docs/script_presentation_demo_memoire.md` — capture/consolidation épisodique, faits à clé connue/imprévisible, log de latence, isolation par utilisateur, oubli contrôlé.
+- `docs/script_presentation_demo_guardrails.md` — cascade à 3 niveaux (règles → Content Safety → LLM), faux positif évité, sortie bloquée (PII), traçabilité, coupe-circuit.
+- `docs/script_presentation_demo_api.md` — API REST (FastAPI) avec Bruno : liste utilisateurs, message avec tool-calling réel, message bloqué par un garde-fou, validation 422.
+
+## Chantier 3 — API REST
+
+- **Première couche HTTP** au-dessus de `Agent.respond()` (`src/velmo/api.py`), en vue d'un futur front Vue.js : `POST /messages`, `GET /users` (référentiel `customers`, pas `memory_users`). Pas d'authentification réelle à ce stade (`user_id` en clair), décision actée pour ce POC. Scheduler mémoire démarré au `lifespan` FastAPI, session DB par requête. `_configure_logging()` extrait dans `logging_config.py`, partagé CLI/API. Testé avec Bruno et vérifié en conditions réelles (vrai Azure, vraie base).
+
+## Chantier MLOps — Évaluation continue & CI qualité
+
+- **Trois suites d'évaluation** (`src/velmo/mlops/`) : mémoire (12 cas), garde-fous (35 cas, note **F1** rappel/précision), qualité (8 cas métier). Note globale **pondérée** (mémoire 0,3 / garde-fous 0,4 / qualité 0,3) et seuil de livraison bloquant (`enforce_threshold`). Le score garde-fous appelle directement le moteur (`check_input`/`check_output`), sans faire tourner tout le graphe LangGraph — isole la mesure du bruit du LLM.
+- **Décision clé — la qualité s'évalue contre le vrai agent, pas un modèle scripté** : les 8 cas qualité attendent des réponses métier réelles (statut de commande, transporteur, extraits FAQ) qu'un faux LLM ne peut ni raisonner ni produire (il n'appelle pas les outils). La suite qualité évalue donc le **vrai agent Azure** ; un premier placeholder (`quality = 0.8` en dur) a été retiré pour ne pas fausser la note. Marqueur pytest `real_llm` + fixture `real_model` (charge `.env`, **skip** si les identifiants Azure sont absents) : les tests unitaires restent hors-ligne et déterministes, seule l'éval MLOps touche le vrai modèle.
+- **CI à deux étages** : `feature` ne lance que lint (`ruff`) + tests unitaires hors-ligne (rapide, gratuit, aucun secret) ; `dev`/`main` lancent la suite complète avec les **services Postgres + Chroma** (mêmes images que `docker-compose`, parité local) et les secrets Azure. Piège résolu : le *health check* en conteneur de Chroma échouait faute de `curl` dans l'image — remplacé par une attente côté runner.
+- **Résilience aux incidents Azure Foundry** : un run CI a skippé l'éval sur `429`/timeout alors que le même code passait ailleurs. Cohérent avec le benchmark (instabilité intermittente **côté déploiement**, hors de notre code) : un incident infra n'est pas une régression qualité, donc l'éval **skip** sur `openai.APIError` au lieu de bloquer le gate (même convention que `test_kb_store`). Une vraie régression (l'agent répond mais mal) fait toujours échouer. Diagnostic confirmé : secrets exacts, appel simple en 200/325 ms — ce sont les **appels agentiques lourds** (modèle de raisonnement `gpt-5.4`, nombreux appels rapides) qui déclenchent rate-limits/timeouts.
+- **Rapport `mlops/report.md` réellement produit + gate CI** : `make eval` pointait sur un module inexistant et `write_report` n'était appelé qu'en test (vers un `tmp_path`) — aucun rapport réel, note jamais journalisée. Nouveau point d'entrée `velmo.mlops.score` : exécute l'éval du vrai agent, **journalise** la note globale + sous-notes, écrit `mlops/report.md` (avant le contrôle de seuil, pour rester dispo au diagnostic même en cas de blocage), applique `enforce_threshold` (exit ≠ 0 sous le seuil = vrai gate). Branché en CI (étage 3 dev/main) avec publication du rapport en **artefact**. Même résilience Azure que les tests (incident infra → exit 0, pas de faux blocage).
+- **Signaux du rapport rendus honnêtes** : `block_rate`/`false_positive_rate` étaient codés en dur à `0.0` alors que la suite garde-fous **calcule déjà** ces compteurs (ils étaient jetés) — désormais remontés depuis un unique passage `evaluate_guardrails`. `latency_ms` n'est plus un placeholder : `run_eval` mesure la **durée réelle** de l'évaluation. Reste le **coût** (`0.0`), dernier placeholder assumé — sera réel avec Langfuse (tracking tokens, prod, cf. Réponse 4 du dossier).
+- **Régression testée dans les deux sens (non-régression prouvée)** : au-delà de « garde-fou retiré » (`AllowAllGuardrails`), ajout de la variante « **mémoire long terme désactivée** » (`NoLongTermMemory`) — les deux font chuter la note globale et bloquer la livraison, conformément au test d'acceptance.
+- **CI allégée** : `sentence-transformers` (torch/CUDA, ~2,5 Go) sorti dans un extra `embeddings` distinct de `vector` (client Chroma, léger) ; la branche `feature` ne l'installe plus (tests hors-ligne), `dev`/`main`/Docker gardent tout. Découvert via une annulation `cancel-in-progress` qui a mis en évidence le poids inutile.
+- **Nettoyage** : suppression du repli silencieux sur `Kimi-K2.6` (déploiement disparu) comme modèle par défaut de `get_llm()`/`get_chat_model()`, aligné sur `gpt-5.4`.

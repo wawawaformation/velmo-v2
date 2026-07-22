@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import openai
 import pytest
 from conftest import build_degraded_agent, build_reference_agent
 
@@ -12,11 +13,44 @@ from velmo.mlops import (
     run_eval,
     write_report,
 )
+from velmo.mlops.manifest import load_manifest
+
+# L'évaluation MLOps mesure le vrai agent (LLM Azure réel), pas un modèle scripté :
+# un faux modèle ne peut ni raisonner ni appeler les outils, donc la note qualité
+# n'aurait aucun sens. Skip automatique hors CI si les identifiants sont absents.
+pytestmark = pytest.mark.real_llm
 
 
-def test_scores_produced_and_versioned():
+def _run_eval_or_skip(agent):
+    """Exécute `run_eval` ; skip sur incident infra Azure (429/timeout/5xx).
+
+    Le benchmark `docs/rapport_latence_azure_foundry.md` a mesuré que ces échecs
+    sont côté déploiement Azure Foundry, hors de notre code (instabilité
+    intermittente). Un incident infra n'est donc PAS une régression qualité : on
+    skip plutôt que de bloquer le gate (convention repo : infra indisponible →
+    skip). Une vraie régression (l'agent répond, mais mal) fait toujours échouer.
+    """
+    try:
+        return run_eval(agent)
+    except openai.APIError as exc:  # RateLimitError, APITimeoutError, APIConnectionError…
+        pytest.skip(f"Incident infra Azure (non déterministe, hors régression) : {exc}")
+
+
+@pytest.fixture(scope="module")
+def reference_scores(real_model):
+    """Évaluation de l'agent de référence, calculée UNE fois pour tout le module.
+
+    Elle était refaite dans chacun des trois tests : quatre évaluations réelles
+    par run CI (~3,5 min chacune) pour un résultat identique — et autant
+    d'appels qui saturaient le quota Azure (429 récurrents). Depuis
+    `temperature=0`, ce résultat est déterministe : le mutualiser est sûr.
+    """
+    return _run_eval_or_skip(build_reference_agent(model=real_model))
+
+
+def test_scores_produced_and_versioned(reference_scores):
     # Critère : note globale + notes mémoire / garde-fous / qualité, versionnées.
-    scores = run_eval(build_reference_agent())
+    scores = reference_scores
     assert scores.global_ is not None and 0.0 <= scores.global_ <= 1.0
     assert scores.memory is not None
     assert scores.guardrails is not None
@@ -24,20 +58,24 @@ def test_scores_produced_and_versioned():
     assert current_version()
 
 
-def test_regression_blocks_delivery():
+def test_regression_blocks_delivery(reference_scores, real_model):
     # Critère : une régression fait chuter la note et bloque la livraison.
-    good = run_eval(build_reference_agent())
-    degraded = run_eval(build_degraded_agent())
+    good = reference_scores
+    degraded = _run_eval_or_skip(build_degraded_agent(model=real_model))
+
+    # Seuil lu dans le manifeste : coder 0.8 en dur ici laissait les tests
+    # valider contre l'ancienne valeur quand le seuil était ajusté ailleurs.
+    threshold = load_manifest().threshold
 
     assert degraded.global_ < good.global_
-    enforce_threshold(good, 0.8)  # ne doit pas lever
+    enforce_threshold(good, threshold)  # ne doit pas lever
     with pytest.raises(DeliveryBlocked):
-        enforce_threshold(degraded, 0.8)
+        enforce_threshold(degraded, threshold)
 
 
-def test_report_contains_signals(tmp_path):
+def test_report_contains_signals(tmp_path, reference_scores):
     # Critère : note mémoire, taux de blocage, taux de faux positifs, latence, coût visibles.
-    scores = run_eval(build_reference_agent())
+    scores = reference_scores
     report = tmp_path / "report.md"
     write_report(scores, report)
 
