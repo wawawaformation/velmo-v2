@@ -9,6 +9,10 @@ on:
       - dev
       - main
   pull_request:
+  # Déclenchement manuel : lance l'évaluation réelle (Azure) sur dev sans
+  # attendre un merge vers main. Voir docs/ressources_gh_cli.md — `gh
+  # workflow run quality --ref dev`.
+  workflow_dispatch:
 
 concurrency:
   group: quality-${{ github.workflow }}-${{ github.ref }}
@@ -78,7 +82,12 @@ jobs:
           done
           echo "Chroma injoignable"; exit 1
 
-      # Etage 2: tests unitaires toujours, acceptance sur dev/main
+      # Etage 2: tests unitaires toujours, acceptance sur dev/main.
+      # Les tests marqués `real_llm` (suite MLOps qualité) tapent le vrai
+      # Azure — coûteux en tokens. Sur un simple push dev, on les SKIP
+      # (`-m "not real_llm"`) : dev reste rapide et gratuit à chaque push.
+      # L'évaluation réelle ne se déclenche que sur main ou à la demande
+      # (`gh workflow run` / bouton "Run workflow") — cf. REAL_EVAL ci-dessous.
       - name: Test suite (pytest)
         env:
           AZURE_AI_INFERENCE_ENDPOINT: ${{ secrets.AZURE_AI_INFERENCE_ENDPOINT }}
@@ -90,9 +99,24 @@ jobs:
           if [[ "${{ github.ref }}" == "refs/heads/dev" || "${{ github.ref }}" == "refs/heads/main" ]]; then
             export CHROMA_URL=http://localhost:8001
             export DB_URL=postgresql+psycopg://app:app@localhost:5432/velmo
-            uv run pytest tests/ -v
+            if [[ "${{ github.ref }}" == "refs/heads/main" || "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+              uv run pytest tests/ -v
+            else
+              uv run pytest tests/ -v -m "not real_llm"
+            fi
           else
             uv run pytest tests/unit/ -v
+          fi
+
+      # Éval réelle (Azure, coûteuse) : uniquement sur main (gate de livraison
+      # officiel) ou en déclenchement manuel — jamais sur un simple push dev.
+      - name: Compute real-eval trigger
+        id: real_eval
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" || "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
           fi
 
       # L'évaluation interroge le VRAI agent, donc la vraie base : sans seed,
@@ -102,7 +126,7 @@ jobs:
       # seedées et ne révélaient donc pas le problème.
       # `seed.py` crée le schéma (`Base.metadata.create_all`) et est idempotent.
       - name: Seed database and knowledge base
-        if: github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main'
+        if: steps.real_eval.outputs.run == 'true'
         env:
           DB_URL: postgresql+psycopg://app:app@localhost:5432/velmo
           CHROMA_HOST: localhost
@@ -111,11 +135,12 @@ jobs:
           uv run python scripts/seed.py
           uv run python scripts/seed_kb.py
 
-      # Etage 3 (dev/main) : éval du vrai agent → journalise la note, écrit
-      # mlops/report.md, bloque sous le seuil du manifeste. Résilient : un
-      # incident infra Azure (429/timeout) sort en 0 sans produire de rapport.
+      # Étage 3 (main, ou déclenchement manuel) : éval du vrai agent →
+      # journalise la note, écrit mlops/report.md, bloque sous le seuil du
+      # manifeste. Résilient : un incident infra Azure (429/timeout) sort en
+      # 0 sans produire de rapport.
       - name: MLOps eval report
-        if: github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main'
+        if: steps.real_eval.outputs.run == 'true'
         env:
           AZURE_AI_INFERENCE_ENDPOINT: ${{ secrets.AZURE_AI_INFERENCE_ENDPOINT }}
           AZURE_AI_INFERENCE_API_KEY: ${{ secrets.AZURE_AI_INFERENCE_API_KEY }}
@@ -129,7 +154,7 @@ jobs:
       # Expose le rapport comme artefact (item 3) — même si l'étape précédente
       # a bloqué la livraison (le rapport est écrit avant le contrôle de seuil).
       - name: Upload MLOps report
-        if: always() && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')
+        if: always() && steps.real_eval.outputs.run == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: mlops-report
