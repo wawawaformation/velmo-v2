@@ -7,6 +7,19 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Décision — cible de déploiement : Azure
+
+Point d'arrêt tranché après plusieurs chantiers en attente (Langfuse, jobs CI
+`docker-build`/`promote-prod`, cf. entrées ci-dessous) faute de savoir *où*
+l'agent serait déployé. Décidé : **Azure**. Première expérience de
+déploiement Azure pour l'auteur du projet — à documenter pas à pas plutôt
+qu'enchaîné d'un bloc, avec confirmation avant toute action qui crée des
+ressources cloud, engage des coûts, ou manipule des secrets.
+
+Ce commit sert de point de repère : dernier état connu et vérifié avant le
+début des travaux de déploiement (suite offline verte, éval réelle validée,
+tous les livrables réunis dans `livrables/`).
+
 ### MLOPS — Observabilité et Évaluation (Chantier 3, Phase 1)
 
 **POC LangFuse Cloud — Fondations complètes** (branche `poc-langfuse`, 8 commits)
