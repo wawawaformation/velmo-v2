@@ -49,6 +49,8 @@ out/
 *.db
 chroma-data/
 
-# MLOps run artifacts
-mlops/report.md
+# mlops/report.md est volontairement VERSIONNÉ (pas ignoré) : c'est le seul
+# historique durable des scores dans le temps — commité manuellement à chaque
+# merge dev -> main significatif (régénéré via `make eval`), pas par la CI
+# (pas de bot qui push sur main). Consultable via `git log -- mlops/report.md`.
 mlops/*.json

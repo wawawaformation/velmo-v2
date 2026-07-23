@@ -1,0 +1,115 @@
+<mxfile host="Electron">
+  <diagram name="Boucle qualité — flux réel" id="boucle-qualite-reel">
+    <mxGraphModel dx="1272" dy="677" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="1150" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="title" parent="1" style="text;html=1;align=left;verticalAlign=middle;fontSize=16;fontStyle=1;" value="Velmo 2.0 — Boucle qualité (src/velmo/mlops/, .github/workflows/ci.yml)" vertex="1">
+          <mxGeometry height="30" width="900" x="20" y="10" as="geometry" />
+        </mxCell>
+
+        <mxCell id="trig_dev" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;" value="push feature/dev&#xa;lint + tests unitaires + acceptance (SQLite)&#xa;PAS d'éval réelle (budget tokens Azure)" vertex="1">
+          <mxGeometry height="60" width="280" x="60" y="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="trig_main" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;fontStyle=1;" value="push main OU workflow_dispatch&#xa;(gh workflow run quality --ref dev)" vertex="1">
+          <mxGeometry height="60" width="280" x="560" y="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="seed" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" value="Seed base + FAQ&#xa;scripts/seed.py + scripts/seed_kb.py&#xa;(vrai Postgres + vrai Chroma, idempotent)" vertex="1">
+          <mxGeometry height="70" width="280" x="560" y="160" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e_main_seed" edge="1" parent="1" source="trig_main" target="seed" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="suites" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" value="3 suites d'évaluation&#xa;eval/memory_cases.jsonl (12) · eval/guardrail_cases.jsonl (35) · eval/quality_cases.jsonl (8)&#xa;temperature=0 — note reproductible d'un run à l'autre" vertex="1">
+          <mxGeometry height="70" width="360" x="520" y="280" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e_seed_suites" edge="1" parent="1" source="seed" target="suites" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="run_eval" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;fontStyle=1;" value="run_eval()&#xa;src/velmo/mlops/__init__.py&#xa;note mémoire, garde-fous (F1), qualité + taux réels" vertex="1">
+          <mxGeometry height="70" width="360" x="520" y="390" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e_suites_run" edge="1" parent="1" source="suites" target="run_eval" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="manifest" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" value="mlops/eval_manifest.yaml&#xa;— source de vérité unique —&#xa;version agent, seuil, pondérations,&#xa;versions de prompts (agent, garde-fous, mémoire×2)" vertex="1">
+          <mxGeometry height="90" width="260" x="80" y="380" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e_manifest_run" edge="1" parent="1" source="manifest" target="run_eval" value="poids" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="note_globale" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" value="Note globale pondérée&#xa;0,3×mémoire + 0,4×garde-fous + 0,3×qualité" vertex="1">
+          <mxGeometry height="60" width="320" x="540" y="500" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e_run_note" edge="1" parent="1" source="run_eval" target="note_globale" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="seuil_check" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" value="enforce_threshold()&#xa;compare à la note globale au seuil du manifeste" vertex="1">
+          <mxGeometry height="60" width="320" x="540" y="600" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e_note_seuil" edge="1" parent="1" source="note_globale" target="seuil_check" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e_manifest_seuil" edge="1" parent="1" source="manifest" target="seuil_check" value="seuil" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="210" y="630" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="bloque" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;fontStyle=1;" value="DeliveryBlocked&#xa;CI échoue (exit 1)&#xa;livraison bloquée — incident infra Azure&#xa;(429/timeout) : exit 0, pas un blocage" vertex="1">
+          <mxGeometry height="90" width="280" x="960" y="595" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e_seuil_bloque" edge="1" parent="1" source="seuil_check" target="bloque" value="note &lt; seuil" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="write_report" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" value="write_report()&#xa;mémoire, blocage, faux positifs, latence, coût&#xa;+ versions/empreintes des 4 prompts" vertex="1">
+          <mxGeometry height="70" width="320" x="540" y="710" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e_seuil_report" edge="1" parent="1" source="seuil_check" target="write_report" value="note ≥ seuil&#xa;(écrit AVANT le contrôle,&#xa;dispo même si bloqué)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="report_md" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" value="mlops/report.md" vertex="1">
+          <mxGeometry height="50" width="220" x="600" y="820" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e_wr_report" edge="1" parent="1" source="write_report" target="report_md" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="artefact" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" value="Artefact CI &quot;mlops-report&quot;&#xa;(upload-artifact, ~90 jours)&#xa;+ note journalisée (log CI, log.info)" vertex="1">
+          <mxGeometry height="70" width="280" x="580" y="910" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e_report_artefact" edge="1" parent="1" source="report_md" target="artefact" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="note_bas" parent="1" style="text;html=1;align=left;verticalAlign=top;fontSize=9;fontColor=#666666;" value="Constaté (post-implémentation) — cf. convention X_reel.drawio.&#xa;Limite connue : contamination entre suites (C-marc-dubois utilisé par mémoire ET qualité) — docs/CHANGELOG.md.&#xa;Coût par conversation : placeholder 0.0 (Langfuse, en attente de la cible de déploiement)." vertex="1">
+          <mxGeometry height="50" width="760" x="80" y="1000" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
