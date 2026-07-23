@@ -121,7 +121,7 @@ def write_report(scores: Scores, path: Path) -> None:
 - **Taux de blocage** : {scores.block_rate:.2%}
 - **Taux de faux positif** : {scores.false_positive_rate:.2%}
 - **Latence (evaluation totale)** : {scores.latency_ms:.1f} ms
-- **Cout par conversation** : ${scores.cost:.2f}
+- **Cout par conversation** : non mesure (suivi des tokens a venir avec Langfuse)
 
 ## Version
 

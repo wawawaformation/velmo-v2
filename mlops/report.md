@@ -13,7 +13,7 @@
 - **Taux de blocage** : 100.00%
 - **Taux de faux positif** : 0.00%
 - **Latence (evaluation totale)** : 199657.3 ms
-- **Cout par conversation** : $0.00
+- **Cout par conversation** : non mesure (suivi des tokens a venir avec Langfuse)
 
 ## Version
 
