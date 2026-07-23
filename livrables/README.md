@@ -7,12 +7,15 @@ actualiser manuellement lors d'une prochaine étape significative.
 
 ## 1. Dossier de conception → [`conception/`](conception/)
 
+Chaque schéma est fourni en `.drawio` (éditable) et en `.jpg` (aperçu direct,
+sans installation de draw.io).
+
 | Pièce exigée | Fichier |
 |---|---|
-| Schéma d'architecture global | [`velmo2-pipeline-global_reel.drawio`](conception/velmo2-pipeline-global_reel.drawio) |
-| Modèle de données de la mémoire | [`velmo2-modele-memoire.drawio`](conception/velmo2-modele-memoire.drawio) (cible) + [`velmo2-modele-memoire_reel.drawio`](conception/velmo2-modele-memoire_reel.drawio) (réel) |
-| Tableau des garde-fous | [`velmo2-garde-fous-schema.drawio`](conception/velmo2-garde-fous-schema.drawio) (cible) + [`velmo2-garde-fous-flux-reel.drawio`](conception/velmo2-garde-fous-flux-reel.drawio) (réel) |
-| Schéma de la boucle qualité | [`velmo2-boucle-qualite_reel.drawio`](conception/velmo2-boucle-qualite_reel.drawio) |
+| Schéma d'architecture global | [`velmo2-pipeline-global_reel.drawio`](conception/velmo2-pipeline-global_reel.drawio) / [`.jpg`](conception/velmo2-pipeline-global_reel.jpg) |
+| Modèle de données de la mémoire | [`velmo2-modele-memoire.drawio`](conception/velmo2-modele-memoire.drawio) / [`.jpg`](conception/velmo2-modele-memoire.jpg) (cible) + [`velmo2-modele-memoire_reel.drawio`](conception/velmo2-modele-memoire_reel.drawio) / [`.jpg`](conception/velmo2-modele-memoire_reel.jpg) (réel) |
+| Tableau des garde-fous | [`velmo2-garde-fous-schema.drawio`](conception/velmo2-garde-fous-schema.drawio) / [`.jpg`](conception/velmo2-garde-fous-schema.jpg) (cible) + [`velmo2-garde-fous-flux-reel.drawio`](conception/velmo2-garde-fous-flux-reel.drawio) / [`.jpg`](conception/velmo2-garde-fous-flux-reel.jpg) (réel) |
+| Schéma de la boucle qualité | [`velmo2-boucle-qualite_reel.drawio`](conception/velmo2-boucle-qualite_reel.drawio) / [`.jpg`](conception/velmo2-boucle-qualite_reel.jpg) |
 
 Convention `X.drawio` / `X_reel.drawio` : la version cible est la conception
 initiale (avant code), la version `_reel` documente ce qui a été
