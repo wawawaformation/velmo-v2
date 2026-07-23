@@ -1,0 +1,53 @@
+name: deploy
+
+# CD séparée de la CI (quality.yml) : construction d'image et déploiement,
+# pas les tests/lint. Sur dev/main uniquement.
+on:
+  push:
+    branches:
+      - dev
+      - main
+
+concurrency:
+  group: deploy-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Construit l'image et la pousse sur GitHub Container Registry (ghcr.io) —
+  # même Dockerfile pour CLI et API, seule la commande de démarrage change
+  # (voir docker-compose.yml, service `api`). Aucun coût, aucune ressource
+  # Azure : ghcr.io est gratuit et l'authentification utilise le token GitHub
+  # intégré (GITHUB_TOKEN), pas de secret à gérer en plus.
+  #
+  # Écart assumé à la Réponse 5 (« build once, promote everywhere ») : ici
+  # l'image est reconstruite sur dev ET main, pas retaguée depuis un unique
+  # build — plus simple pour ce premier déploiement, à raffiner plus tard
+  # vers un vrai retag si besoin.
+  docker-build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Tag SHA (référence immuable) + tag de branche (pointeur mobile,
+      # ex. ghcr.io/.../velmo-v2:main pour la prod).
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:${{ github.sha }}
+            ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+
+  # Déploiement Azure : à écrire une fois l'App Service (velmo-basic),
+  # Postgres et Chroma prêts côté Azure — cf. docs/CHANGELOG.md.

@@ -20,6 +20,15 @@ Ce commit sert de point de repère : dernier état connu et vérifié avant le
 début des travaux de déploiement (suite offline verte, éval réelle validée,
 tous les livrables réunis dans `livrables/`).
 
+**Étapes réalisées** :
+- App Service Azure `velmo-basic` créé (plan Basic, Linux, conteneur), région France Central, groupe `dlegrandRG`. Un premier essai en tarif `Free` a été abandonné : ce tarif ne supporte pas les conteneurs Linux personnalisés.
+- Publication en **conteneur** (réutilise le Dockerfile existant, testé en CI) plutôt qu'en code natif — cohérent avec la Réponse 5 (build once, promote everywhere).
+- Un seul conteneur pour commencer (l'API, `src/velmo/api.py`) — pas la fonctionnalité *Site Containers* (multi-conteneurs dans une même Web App), plus récente/moins éprouvée, à explorer plus tard une fois le plus simple validé.
+- Registre choisi : **GitHub Container Registry** (`ghcr.io`) plutôt qu'Azure Container Registry — gratuit, s'intègre à la CI existante, authentification via le `GITHUB_TOKEN` intégré (pas de secret supplémentaire à gérer). ACR aurait ajouté une ressource Azure payante (~5 €/mois) sans bénéfice net ici.
+- **`.github/workflows/cd.yml`** créé, séparé de `ci.yml` (CI = qualité/tests, CD = build + déploiement). Job `docker-build` : construit l'image (même Dockerfile que le CLI — seule la commande de démarrage change, comme `docker-compose.yml` le fait déjà pour le service `api`) et la pousse sur `ghcr.io`, taguée par SHA (référence immuable) et par nom de branche (pointeur mobile). Écart assumé à « build once, promote everywhere » : l'image est reconstruite sur `dev` et `main`, pas retaguée depuis un unique build — plus simple pour ce premier déploiement.
+
+**Restent à faire** : Postgres (Azure Database for PostgreSQL Flexible Server, à créer), Chroma (pas de service Azure managé natif — un second conteneur), variables d'environnement de la Web App, étape de déploiement effective dans `cd.yml`.
+
 ### MLOPS — Observabilité et Évaluation (Chantier 3, Phase 1)
 
 **POC LangFuse Cloud — Fondations complètes** (branche `poc-langfuse`, 8 commits)
