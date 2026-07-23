@@ -4,15 +4,15 @@
 
 - **Memoire** : 100.00%
 - **Garde-fous** : 100.00%
-- **Qualite** : 100.00%
-- **Global** : 100.00%
+- **Qualite** : 87.50%
+- **Global** : 96.25%
 
 ## Signaux de monitorage
 
 - **Note memoire** : 100.00%
 - **Taux de blocage** : 100.00%
 - **Taux de faux positif** : 0.00%
-- **Latence (evaluation totale)** : 237592.5 ms
+- **Latence (evaluation totale)** : 199657.3 ms
 - **Cout par conversation** : $0.00
 
 ## Version
