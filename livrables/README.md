@@ -7,15 +7,17 @@ actualiser manuellement lors d'une prochaine étape significative.
 
 ## 1. Dossier de conception → [`conception/`](conception/)
 
-Chaque schéma est fourni en `.drawio` (éditable) et en `.jpg` (aperçu direct,
-sans installation de draw.io).
+Chaque schéma est fourni en `.jpg` (aperçu direct, sans installation de
+draw.io). Sources `.drawio` éditables dans le dépôt vivant, sous
+[`conception/`](../conception/) (non dupliquées ici — cf. `code/README.md`
+sur le même principe pour le code).
 
-| Pièce exigée | Fichier |
-|---|---|
-| Schéma d'architecture global | [`velmo2-pipeline-global_reel.drawio`](conception/velmo2-pipeline-global_reel.drawio) / [`.jpg`](conception/velmo2-pipeline-global_reel.jpg) |
-| Modèle de données de la mémoire | [`velmo2-modele-memoire.drawio`](conception/velmo2-modele-memoire.drawio) / [`.jpg`](conception/velmo2-modele-memoire.jpg) (cible) + [`velmo2-modele-memoire_reel.drawio`](conception/velmo2-modele-memoire_reel.drawio) / [`.jpg`](conception/velmo2-modele-memoire_reel.jpg) (réel) |
-| Tableau des garde-fous | [`velmo2-garde-fous-schema.drawio`](conception/velmo2-garde-fous-schema.drawio) / [`.jpg`](conception/velmo2-garde-fous-schema.jpg) (cible) + [`velmo2-garde-fous-flux-reel.drawio`](conception/velmo2-garde-fous-flux-reel.drawio) / [`.jpg`](conception/velmo2-garde-fous-flux-reel.jpg) (réel) |
-| Schéma de la boucle qualité | [`velmo2-boucle-qualite_reel.drawio`](conception/velmo2-boucle-qualite_reel.drawio) / [`.jpg`](conception/velmo2-boucle-qualite_reel.jpg) |
+| Pièce exigée | Aperçu | Source éditable |
+|---|---|---|
+| Schéma d'architecture global | [`velmo2-pipeline-global_reel.jpg`](conception/velmo2-pipeline-global_reel.jpg) | [`conception/velmo2-pipeline-global_reel.drawio`](../conception/velmo2-pipeline-global_reel.drawio) |
+| Modèle de données de la mémoire | [`velmo2-modele-memoire.jpg`](conception/velmo2-modele-memoire.jpg) (cible) + [`velmo2-modele-memoire_reel.jpg`](conception/velmo2-modele-memoire_reel.jpg) (réel) | [`conception/memoire/flux.drawio`](../conception/memoire/flux.drawio) + [`flux_reel.drawio`](../conception/memoire/flux_reel.drawio) |
+| Tableau des garde-fous | [`velmo2-garde-fous-schema.jpg`](conception/velmo2-garde-fous-schema.jpg) (cible) + [`velmo2-garde-fous-flux-reel.jpg`](conception/velmo2-garde-fous-flux-reel.jpg) (réel) | [`conception/garde-fous/velmo2-garde-fous-schema.drawio`](../conception/garde-fous/velmo2-garde-fous-schema.drawio) + [`velmo2-garde-fous-flux-reel.drawio`](../conception/garde-fous/velmo2-garde-fous-flux-reel.drawio) |
+| Schéma de la boucle qualité | [`velmo2-boucle-qualite_reel.jpg`](conception/velmo2-boucle-qualite_reel.jpg) | [`conception/LMOPS/velmo2-boucle-qualite_reel.drawio`](../conception/LMOPS/velmo2-boucle-qualite_reel.drawio) |
 
 Convention `X.drawio` / `X_reel.drawio` : la version cible est la conception
 initiale (avant code), la version `_reel` documente ce qui a été
