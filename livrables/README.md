@@ -17,3 +17,7 @@ Le code n'est pas dupliqué ici (source de vérité = le dépôt Git).
 
 `main` n'a pas été développée séparément de `dev` (contrainte de temps) —
 détail dans le CHANGELOG.
+
+Build Docker, déploiement staging/prod et Langfuse ne sont pas implémentés :
+bloqués par une même décision externe non tranchée (cible de déploiement) —
+détail dans le CHANGELOG.
