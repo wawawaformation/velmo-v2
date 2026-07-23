@@ -1,5 +1,7 @@
 # Livrable — Code de Velmo 2.0
 
+**Dépôt** : [github.com/wawawaformation/velmo-v2](https://github.com/wawawaformation/velmo-v2)
+
 Le code n'est **pas dupliqué** dans ce dossier : une copie figée du code source
 partirait en décalage dès le commit suivant, et le dépôt Git est déjà la
 source de vérité versionnée (même principe que pour les schémas de
@@ -12,9 +14,9 @@ conception — un seul exemplaire fait foi).
 
 | Module | Chemin | Rôle |
 |---|---|---|
-| Mémoire | [`src/velmo/memory/`](../../src/velmo/memory/) | Court terme (RAM), long terme sémantique (colonnes `User` + vectoriel Chroma), épisodique (relationnel + vectoriel), isolation par `user_id`, droit à l'oubli (`forget()` + outil conversationnel `forget_memory`) |
-| Garde-fous | [`src/velmo/guardrails/`](../../src/velmo/guardrails/) | Cascade entrée/sortie : règles regex → Azure AI Content Safety → classifieur LLM (`gpt-5.4-nano`) |
-| MLOps | [`src/velmo/mlops/`](../../src/velmo/mlops/) | 3 suites d'évaluation, note globale versionnée (`mlops/eval_manifest.yaml`), gate CI bloquant, rapport de suivi (`score.py`) |
+| Mémoire | [`src/velmo/memory/`](../src/velmo/memory/) | Court terme (RAM), long terme sémantique (colonnes `User` + vectoriel Chroma), épisodique (relationnel + vectoriel), isolation par `user_id`, droit à l'oubli (`forget()` + outil conversationnel `forget_memory`) |
+| Garde-fous | [`src/velmo/guardrails/`](../src/velmo/guardrails/) | Cascade entrée/sortie : règles regex → Azure AI Content Safety → classifieur LLM (`gpt-5.4-nano`) |
+| MLOps | [`src/velmo/mlops/`](../src/velmo/mlops/) | 3 suites d'évaluation, note globale versionnée (`mlops/eval_manifest.yaml`), gate CI bloquant, rapport de suivi (`score.py`) |
 
 ## Tests associés
 
@@ -22,13 +24,21 @@ conception — un seul exemplaire fait foi).
 - `tests/acceptance/` — suite d'acceptance (mémoire, garde-fous, MLOps),
   y compris contre le vrai agent Azure (marqueur `pytest.mark.real_llm`)
 
-Voir [`../preuve_tests_acceptance.md`](../preuve_tests_acceptance.md) pour la
+Voir [`preuve_tests_acceptance.md`](preuve_tests_acceptance.md) pour la
 preuve d'exécution.
+
+## Rapport de suivi
+
+Instantané réel (100 % sur les 3 suites) : [`report.md`](report.md).
+
+## Dossier de conception
+
+Schémas (aperçu JPG + sources éditables) : [`conception/`](conception/).
 
 ## Historique détaillé
 
 Chaque décision, chaque bug trouvé et corrigé, chaque commit est documenté
-dans [`docs/CHANGELOG.md`](../../docs/CHANGELOG.md).
+dans [`docs/CHANGELOG.md`](../docs/CHANGELOG.md).
 
 ## Pourquoi `main` n'a pas été développée séparément
 
