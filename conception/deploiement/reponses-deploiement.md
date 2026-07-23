@@ -120,3 +120,95 @@ conteneur au même chemin (`/chroma/chroma`).
 **Point ouvert** : droits de création d'un Storage Account/Azure Files dans
 l'abonnement — à confirmer avant le provisionnement (item 4 du
 développement).
+
+---
+
+# Réponse 2 — Gestion des secrets et de la configuration
+
+## Question
+
+**Lister les secrets et paramètres à externaliser (clé et endpoint du
+service d'IA, connexion au stockage mémoire, seuils des garde-fous).
+Décrire où et comment ils seront stockés côté Azure, sans jamais figurer
+dans le dépôt Git.**
+
+## Inventaire (vérifié dans le code et le `.env`, rien de supposé)
+
+### A. Vrais secrets (sensibles)
+
+| Secret | Pourquoi c'est sensible |
+|---|---|
+| `AZURE_AI_INFERENCE_API_KEY` | Donne accès au LLM **et** à Content Safety — vérifié (`content_safety.py:65`) : les deux services réutilisent la même clé, pas de secret séparé pour Content Safety |
+| `DB_URL` | Chaîne de connexion contenant identifiant **et** mot de passe intégrés |
+
+### B. Paramètres de configuration (pas secrets, mais dépendent de l'environnement)
+
+| Paramètre | Rôle |
+|---|---|
+| `AZURE_AI_INFERENCE_ENDPOINT` | URL du LLM |
+| `AZURE_AI_INFERENCE_MODEL` | Nom du modèle (`gpt-5.4`) |
+| `AZURE_AI_CLASSIFIER_MODEL` | Nom du modèle classifieur |
+| `AZURE_CONTENT_SAFETY_ENDPOINT` | URL Content Safety |
+| `CHROMA_URL` | Adresse du conteneur Chroma — changera pour pointer vers Azure |
+| `EMBEDDING_MODEL` | Nom du modèle d'embeddings |
+
+### C. Seuils des garde-fous : délibérément **non** externalisés en variables d'environnement
+
+Vérifié dans le code : `REFUND_CAP = 50.0` (`tools/_common.py`) et
+`_SEVERITY_THRESHOLD = 4` (`guardrails/content_safety.py`) sont des
+constantes Python, pas des variables lues depuis l'environnement — de même
+que le seuil/pondérations d'évaluation MLOps (`mlops/eval_manifest.yaml`).
+
+**Décision actée** : on ne change **rien** à cette philosophie (cohérente
+avec la Réponse 3 du chantier 3 — « config garde-fous → Git, structurel »).
+Raison : une variable d'environnement Azure se modifie **silencieusement**
+par quiconque a accès au portail, sans trace ni revue. Un seuil versionné en
+Git ne change que via un commit — historique, revue possible, justification
+tracée (`git log`). Pour un seuil qui décide quand bloquer un client ou
+escalader un remboursement, cette traçabilité prime sur la commodité de
+pouvoir le changer à chaud.
+
+*« Seuils des garde-fous »* (item du brief) est donc satisfait par
+l'existant, sans modification : `REFUND_CAP`, `_SEVERITY_THRESHOLD`
+(constantes Python) et `mlops/eval_manifest.yaml` (seuil/pondérations
+d'évaluation).
+
+### D. Variable obsolète, à retirer
+
+`EVAL_MIN_SCORE` — vérifié : plus lue nulle part dans le code (remplacée par
+`mlops/eval_manifest.yaml`). Hors sujet pour Azure, à supprimer du `.env`.
+
+## Où et comment stocker les vrais secrets (A) côté Azure
+
+Deux mécanismes Azure possibles :
+
+| Option | Limite |
+|---|---|
+| **App Settings** (variables d'application) | Chiffrées au repos, mais visibles **en clair** par quiconque a un accès Lecteur/Contributeur sur la Web App — pas de rotation/versionnage natif — dupliquées si plusieurs ressources en ont besoin |
+| **Azure Key Vault** | Accès finement contrôlé (droit de lire *ce* secret, pas la config entière), versionnage natif, source unique même si plusieurs ressources en dépendent |
+
+**Retenu : Azure Key Vault**, pour les deux vrais secrets (A). Ce n'est pas
+qu'une préférence : c'est la recommandation documentée du *Well-Architected
+Framework* Microsoft pour ce cas précis (clé d'API, chaîne de connexion).
+
+**Mécanisme** : App Service reçoit une **identité managée** (identité Azure
+automatique, pas un mot de passe à gérer) ; cette identité se voit accorder
+le droit de lire les secrets dans Key Vault ; App Service référence le
+secret sans jamais détenir de credential pour s'authentifier à Key Vault
+lui-même — la confiance passe par l'identité Azure, pas par un secret de
+plus à protéger.
+
+Les paramètres de configuration (B) restent en **App Settings** — pas
+sensibles, pas besoin du coffre.
+
+## Position retenue
+
+| Catégorie | Où | Mécanisme |
+|---|---|---|
+| Vrais secrets (A) : clé API, `DB_URL` | Azure Key Vault | Identité managée de l'App Service, accès en lecture seule au secret |
+| Paramètres de config (B) : endpoints, noms de modèles, `CHROMA_URL` | App Settings (App Service) | Variables d'application classiques |
+| Seuils des garde-fous (C) | Git (code + `mlops/eval_manifest.yaml`) | Commit + revue, jamais une variable d'environnement |
+| `EVAL_MIN_SCORE` | — | Obsolète, à retirer du `.env` |
+
+Aucun secret, à aucun moment, ne figure dans le dépôt Git ni dans le code
+source — conforme au critère d'évaluation du brief.
