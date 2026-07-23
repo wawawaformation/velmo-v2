@@ -18,8 +18,74 @@ concurrency:
   group: quality-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# 4 jobs distincts (au lieu d'un seul avec toutes les étapes à la suite) :
+# GitHub Actions n'affiche dans la barre latérale que les JOBS, pas les
+# étapes internes à un job — les séparer rend visible où ça bloque, en plus
+# de permettre l'exécution en parallèle de unit-tests/acceptance-tests.
 jobs:
-  lint-and-unit:
+  # Étage 1 : fail fast et gratuit, aucune dépendance projet nécessaire.
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      - name: Set up Python
+        run: uv python install 3.11
+      - name: Install dependencies
+        run: uv sync
+      - name: Lint (ruff)
+        run: uv run ruff check .
+
+  # Tests hors-ligne (fixtures SQLite/LocalKB) : aucun service réel requis,
+  # tourne sur toutes les branches.
+  unit-tests:
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      - name: Set up Python
+        run: uv python install 3.11
+      # feature n'a besoin ni de vrais embeddings ni du vrai LLM Azure :
+      # `sentence-transformers` tire torch/CUDA (~2,5 Go), inutile ici.
+      # dev/main gardent tous les extras (utilisés par acceptance-tests
+      # et real-eval, qui tournent sur ces branches).
+      - name: Install dependencies
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/dev" || "${{ github.ref }}" == "refs/heads/main" ]]; then
+            uv sync --all-extras
+          else
+            uv sync --extra llm --extra vector --extra api
+          fi
+      - name: Unit tests (pytest)
+        run: uv run pytest tests/unit/ -v
+
+  # Tests d'acceptance hors-ligne (fixtures SQLite/LocalKB, pas real_llm) :
+  # dev/main uniquement (feature reste limitée aux tests unitaires).
+  acceptance-tests:
+    needs: lint
+    if: github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      - name: Set up Python
+        run: uv python install 3.11
+      - name: Install dependencies
+        run: uv sync --all-extras
+      # Marqués `real_llm` (suite MLOps qualité) exclus : tapent le vrai
+      # Azure, coûteux en tokens — réservés au job real-eval ci-dessous.
+      - name: Acceptance tests (pytest)
+        run: uv run pytest tests/acceptance/ -v -m "not real_llm"
+
+  # Éval réelle (Azure, coûteuse) : uniquement sur main (gate de livraison
+  # officiel) ou en déclenchement manuel — jamais sur un simple push dev.
+  real-eval:
+    needs: [unit-tests, acceptance-tests]
+    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
 
     # Mêmes images que docker-compose (parité local). Le health check en
@@ -46,33 +112,14 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
       - name: Install uv
         uses: astral-sh/setup-uv@v5
-
       - name: Set up Python
         run: uv python install 3.11
-
-      # feature n'a besoin ni de vrais embeddings (Chroma non joignable, tests
-      # unitaires hors-ligne) ni du vrai LLM Azure : `sentence-transformers`
-      # tire torch/CUDA (~2,5 Go), inutile ici et source de lenteur/collisions
-      # avec `cancel-in-progress`. dev/main gardent tous les extras (vrai
-      # Chroma + vrais embeddings).
       - name: Install dependencies
-        run: |
-          if [[ "${{ github.ref }}" == "refs/heads/dev" || "${{ github.ref }}" == "refs/heads/main" ]]; then
-            uv sync --all-extras
-          else
-            uv sync --extra llm --extra vector --extra api
-          fi
+        run: uv sync --all-extras
 
-      # Etage 1: fail fast et gratuit
-      - name: Lint (ruff)
-        run: uv run ruff check .
-
-      # Attente Chroma (dev/main) : health check runner-side, curl dispo ici
       - name: Wait for Chroma
-        if: github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main'
         run: |
           for i in $(seq 1 30); do
             if curl -sf http://localhost:8001/api/v1/heartbeat >/dev/null; then
@@ -82,51 +129,11 @@ jobs:
           done
           echo "Chroma injoignable"; exit 1
 
-      # Etage 2: tests unitaires toujours, acceptance sur dev/main.
-      # Les tests marqués `real_llm` (suite MLOps qualité) tapent le vrai
-      # Azure — coûteux en tokens. Sur un simple push dev, on les SKIP
-      # (`-m "not real_llm"`) : dev reste rapide et gratuit à chaque push.
-      # L'évaluation réelle ne se déclenche que sur main ou à la demande
-      # (`gh workflow run` / bouton "Run workflow") — cf. REAL_EVAL ci-dessous.
-      - name: Test suite (pytest)
-        env:
-          AZURE_AI_INFERENCE_ENDPOINT: ${{ secrets.AZURE_AI_INFERENCE_ENDPOINT }}
-          AZURE_AI_INFERENCE_API_KEY: ${{ secrets.AZURE_AI_INFERENCE_API_KEY }}
-          AZURE_AI_INFERENCE_MODEL: ${{ secrets.AZURE_AI_INFERENCE_MODEL }}
-          AZURE_AI_CLASSIFIER_MODEL: ${{ secrets.AZURE_AI_CLASSIFIER_MODEL }}
-          AZURE_CONTENT_SAFETY_ENDPOINT: ${{ secrets.AZURE_CONTENT_SAFETY_ENDPOINT }}
-        run: |
-          if [[ "${{ github.ref }}" == "refs/heads/dev" || "${{ github.ref }}" == "refs/heads/main" ]]; then
-            export CHROMA_URL=http://localhost:8001
-            export DB_URL=postgresql+psycopg://app:app@localhost:5432/velmo
-            if [[ "${{ github.ref }}" == "refs/heads/main" || "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-              uv run pytest tests/ -v
-            else
-              uv run pytest tests/ -v -m "not real_llm"
-            fi
-          else
-            uv run pytest tests/unit/ -v
-          fi
-
-      # Éval réelle (Azure, coûteuse) : uniquement sur main (gate de livraison
-      # officiel) ou en déclenchement manuel — jamais sur un simple push dev.
-      - name: Compute real-eval trigger
-        id: real_eval
-        run: |
-          if [[ "${{ github.ref }}" == "refs/heads/main" || "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            echo "run=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "run=false" >> "$GITHUB_OUTPUT"
-          fi
-
       # L'évaluation interroge le VRAI agent, donc la vraie base : sans seed,
       # les 8 cas qualité (statut de commande, stock, FAQ) échouent tous et la
       # note globale tombe à 0.70 — le gate bloque pour une base vide, pas pour
-      # une régression. Les tests pytest, eux, utilisent des fixtures SQLite
-      # seedées et ne révélaient donc pas le problème.
-      # `seed.py` crée le schéma (`Base.metadata.create_all`) et est idempotent.
+      # une régression. `seed.py` crée le schéma et est idempotent.
       - name: Seed database and knowledge base
-        if: steps.real_eval.outputs.run == 'true'
         env:
           DB_URL: postgresql+psycopg://app:app@localhost:5432/velmo
           CHROMA_HOST: localhost
@@ -135,12 +142,22 @@ jobs:
           uv run python scripts/seed.py
           uv run python scripts/seed_kb.py
 
-      # Étage 3 (main, ou déclenchement manuel) : éval du vrai agent →
-      # journalise la note, écrit mlops/report.md, bloque sous le seuil du
+      # Suite d'acceptance contre le vrai agent Azure (marqueur real_llm).
+      - name: Real-agent acceptance tests (pytest)
+        env:
+          AZURE_AI_INFERENCE_ENDPOINT: ${{ secrets.AZURE_AI_INFERENCE_ENDPOINT }}
+          AZURE_AI_INFERENCE_API_KEY: ${{ secrets.AZURE_AI_INFERENCE_API_KEY }}
+          AZURE_AI_INFERENCE_MODEL: ${{ secrets.AZURE_AI_INFERENCE_MODEL }}
+          AZURE_AI_CLASSIFIER_MODEL: ${{ secrets.AZURE_AI_CLASSIFIER_MODEL }}
+          AZURE_CONTENT_SAFETY_ENDPOINT: ${{ secrets.AZURE_CONTENT_SAFETY_ENDPOINT }}
+          CHROMA_URL: http://localhost:8001
+          DB_URL: postgresql+psycopg://app:app@localhost:5432/velmo
+        run: uv run pytest tests/acceptance/test_mlops.py -v -m real_llm
+
+      # Journalise la note, écrit mlops/report.md, bloque sous le seuil du
       # manifeste. Résilient : un incident infra Azure (429/timeout) sort en
       # 0 sans produire de rapport.
       - name: MLOps eval report
-        if: steps.real_eval.outputs.run == 'true'
         env:
           AZURE_AI_INFERENCE_ENDPOINT: ${{ secrets.AZURE_AI_INFERENCE_ENDPOINT }}
           AZURE_AI_INFERENCE_API_KEY: ${{ secrets.AZURE_AI_INFERENCE_API_KEY }}
@@ -154,10 +171,9 @@ jobs:
       # Expose le rapport comme artefact (item 3) — même si l'étape précédente
       # a bloqué la livraison (le rapport est écrit avant le contrôle de seuil).
       - name: Upload MLOps report
-        if: always() && steps.real_eval.outputs.run == 'true'
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: mlops-report
           path: mlops/report.md
           if-no-files-found: ignore
-
