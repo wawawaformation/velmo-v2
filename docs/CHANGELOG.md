@@ -29,6 +29,10 @@ tous les livrables réunis dans `livrables/`).
 
 **Restent à faire** : Postgres (Azure Database for PostgreSQL Flexible Server, à créer), Chroma (pas de service Azure managé natif — un second conteneur), variables d'environnement de la Web App, étape de déploiement effective dans `cd.yml`.
 
+Brief officiel reçu et stocké tel quel : `conception/deploiement/brief2.md` (dossier de déploiement à valider avant toute mise en ligne — mêmes exigences non négociables : R2 persistance, R3 isolation, garde-fous intacts, aucun secret dans le code).
+
+**`.github/workflows/cd.yml` créé, séparé de `ci.yml`** : CD (build + déploiement) distincte de la CI (qualité/tests), à la demande explicite plutôt que de mélanger `docker-build` dans `ci.yml`. Job `docker-build` (dev/main) : construit l'image (même Dockerfile que le CLI, seule la commande de démarrage change — comme `docker-compose.yml` le fait déjà pour le service `api`) et la pousse sur `ghcr.io`, taguée par SHA (référence immuable) et par nom de branche. Authentification via `GITHUB_TOKEN` intégré, pas de secret supplémentaire. Écart assumé à « build once, promote everywhere » (Réponse 5) : image reconstruite sur `dev` et `main`, pas retaguée depuis un unique build — plus simple pour ce premier déploiement. Vérifié en CI : build et push réussis.
+
 ### MLOPS — Observabilité et Évaluation (Chantier 3, Phase 1)
 
 **POC LangFuse Cloud — Fondations complètes** (branche `poc-langfuse`, 8 commits)
