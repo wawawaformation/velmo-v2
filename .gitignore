@@ -44,6 +44,14 @@ out/
 # Docker
 .docker-data/
 
+# Local / session
+.claude/
+deploye/
+
+# Draw.io temporary files
+*.drawio.bkp
+.$*.drawio.dtmp
+
 # Data / model artifacts (override case-by-case in subdirs)
 *.sqlite
 *.db
