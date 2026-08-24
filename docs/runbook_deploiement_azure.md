@@ -25,7 +25,7 @@ ressources pour confirmation.*
 
 Version détaillée avec associations et endpoints réels (complète la
 capture ci-dessus) :
-`conception/deploiement/velmo2-ressources-azure_reel.drawio` — reprend les
+`docs/img/velmo2-ressources-azure_reel.drawio` — reprend les
 mêmes ressources avec les URLs/hôtes effectifs (`velmo-pg.postgres.database
 .azure.com`, `velmo-kv.vault.azure.net`, endpoint Azure OpenAI, images
 Docker sources) et le flux réel des identifiants (Key Vault → App Settings
