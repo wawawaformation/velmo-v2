@@ -15,6 +15,24 @@ conception (`conception/deploiement/reponses-deploiement.md`,
 | `velmo-kv` | Key Vault — secrets (`AZURE-AI-INFERENCE-API-KEY`, `DB-URL`) |
 | Azure OpenAI (`dlegrandext-6309-resource`) | Modèles `gpt-5.4` (chat) / `gpt-5.4-nano` (classifieur) |
 
+![Diagramme des ressources du groupe dlegrandRG dans le portail Azure : velmo-pg, velmo-kv, velmostorageprod, velmo-basic et velmo-chroma reliés au plan App Service david-velmo-basic](img/azure_deploiement.png)
+
+*Capture du portail Azure (vue "Diagramme des ressources" du groupe
+`dlegrandRG`) — livrable du point 9 du brief. La ressource Azure OpenAI
+(`dlegrandext-6309-resource`) fait partie du même groupe de ressources mais
+n'apparaît pas sur cette vue filtrée par type ; voir la liste complète des
+ressources pour confirmation.*
+
+Version détaillée avec associations et endpoints réels (complète la
+capture ci-dessus) :
+`conception/deploiement/velmo2-ressources-azure_reel.drawio` — reprend les
+mêmes ressources avec les URLs/hôtes effectifs (`velmo-pg.postgres.database
+.azure.com`, `velmo-kv.vault.azure.net`, endpoint Azure OpenAI, images
+Docker sources) et le flux réel des identifiants (Key Vault → App Settings
+→ ressources). Complémentaire à `velmo2-deploiement-azure.drawio` (vue
+cible UML abstraite) : celui-ci documente l'état constaté, pas la
+conception initiale.
+
 ## 1. Déployer une nouvelle version de l'agent
 
 ### 1.1. Construire et pousser l'image

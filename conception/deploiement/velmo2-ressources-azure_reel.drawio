@@ -1,0 +1,93 @@
+<mxfile host="Electron">
+  <diagram name="Ressources Azure — état réel" id="ressources-azure-reel">
+    <mxGraphModel dx="1653" dy="880" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1500" pageHeight="1150" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;align=left;verticalAlign=middle;fontSize=16;fontStyle=1;" value="Velmo 2.0 — Ressources Azure réellement déployées (groupe dlegrandRG)" vertex="1">
+          <mxGeometry height="30" width="900" x="20" y="10" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" parent="1" style="text;html=1;align=left;verticalAlign=middle;fontSize=10;fontColor=#666666;" value="État constaté le 24/08/2026 — cf. conception/deploiement/reponses-deploiement.md et docs/runbook_deploiement_azure.md" vertex="1">
+          <mxGeometry height="20" width="900" x="20" y="38" as="geometry" />
+        </mxCell>
+
+        <mxCell id="client" parent="1" style="shape=cube;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" value="«device»&lt;br&gt;Client (curl / navigateur)" vertex="1">
+          <mxGeometry height="60" width="220" x="620" y="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="plan" parent="1" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=none;strokeColor=#6c8ebf;fontSize=10;verticalAlign=top;align=left;spacingLeft=8;spacingTop=6;" value="Plan App Service « david-velmo-basic » (Basic, Linux) — partagé, pas de coût de plan supplémentaire" vertex="1">
+          <mxGeometry height="180" width="560" x="360" y="190" as="geometry" />
+        </mxCell>
+
+        <mxCell id="basic" parent="1" style="shape=cube;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;verticalAlign=top;spacingTop=6;align=left;spacingLeft=6;" value="velmo-basic (App Service, Site Containers)&#xa;&#xa;https://velmo-basic-f6fqc9d2arg9a8ea&#xa;.francecentral-01.azurewebsites.net&#xa;&#xa;image : ghcr.io/wawawaformation/velmo-v2:dev&#xa;démarrage : /app/.venv/bin/uvicorn velmo.api:app&#xa;--host 0.0.0.0 --port 8000" vertex="1">
+          <mxGeometry height="160" width="260" x="380" y="215" as="geometry" />
+        </mxCell>
+
+        <mxCell id="chroma" parent="1" style="shape=cube;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;verticalAlign=top;spacingTop=6;align=left;spacingLeft=6;" value="velmo-chroma (App Service, Site Containers)&#xa;&#xa;https://velmo-chroma-dwaja8euagbmbgd3&#xa;.francecentral-01.azurewebsites.net&#xa;&#xa;image : index.docker.io/chromadb/chroma:0.5.23&#xa;port cible : 8000" vertex="1">
+          <mxGeometry height="160" width="260" x="660" y="215" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e_client_basic" edge="1" parent="1" source="client" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;" target="basic" value="HTTPS&#xa;POST /messages, GET /users">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="ghcr" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=9;" value="GitHub Container Registry (ghcr.io)&#xa;wawawaformation/velmo-v2&#xa;image publique — pas de credential" vertex="1">
+          <mxGeometry height="60" width="240" x="40" y="230" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ghcr_basic" edge="1" parent="1" source="ghcr" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;dashed=1;" target="basic" value="«deploy» pull image">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="dockerhub" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=9;" value="Docker Hub (index.docker.io)&#xa;chromadb/chroma:0.5.23" vertex="1">
+          <mxGeometry height="60" width="240" x="1010" y="230" as="geometry" />
+        </mxCell>
+        <mxCell id="e_dockerhub_chroma" edge="1" parent="1" source="dockerhub" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;dashed=1;" target="chroma" value="«deploy» pull image">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e_basic_chroma" edge="1" parent="1" source="basic" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;" target="chroma" value="CHROMA_URL (App Settings)&#xa;HTTPS, port 443">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="openai" parent="1" style="shape=cube;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;align=left;spacingLeft=6;" value="Azure OpenAI (dlegrandext-6309-resource)&#xa;&#xa;endpoint : https://dlegrandext-6309-resource&#xa;.openai.azure.com/openai/v1&#xa;chat : gpt-5.4 — classifieur : gpt-5.4-nano" vertex="1">
+          <mxGeometry height="100" width="300" x="1050" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="e_basic_openai" edge="1" parent="1" source="basic" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;" target="openai" value="AZURE_AI_INFERENCE_ENDPOINT (App Settings)&#xa;AZURE_AI_INFERENCE_API_KEY (Key Vault)">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="keyvault" parent="1" style="shape=cube;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;align=left;spacingLeft=6;" value="velmo-kv (Key Vault)&#xa;&#xa;https://velmo-kv.vault.azure.net&#xa;secrets : AZURE-AI-INFERENCE-API-KEY, DB-URL" vertex="1">
+          <mxGeometry height="90" width="300" x="40" y="420" as="geometry" />
+        </mxCell>
+        <mxCell id="e_basic_keyvault" edge="1" parent="1" source="basic" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;dashed=1;" target="keyvault" value="identité managée (système)&#xa;rôle : Key Vault Secrets User">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="postgres" parent="1" style="shape=cube;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;align=left;spacingLeft=6;" value="velmo-pg (PostgreSQL Flexible Server)&#xa;&#xa;velmo-pg.postgres.database.azure.com:5432&#xa;base : velmo — login : veladmin&#xa;sslmode=require — pare-feu : AllowAzureServices" vertex="1">
+          <mxGeometry height="100" width="320" x="400" y="450" as="geometry" />
+        </mxCell>
+        <mxCell id="e_basic_postgres" edge="1" parent="1" source="basic" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;" target="postgres" value="DB_URL (Key Vault)&#xa;R2 persistance, R3 isolation user_id">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="storage" parent="1" style="shape=cube;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;align=left;spacingLeft=6;" value="velmostorageprod (Storage Account)&#xa;&#xa;partage Azure Files : chroma-data" vertex="1">
+          <mxGeometry height="80" width="280" x="780" y="450" as="geometry" />
+        </mxCell>
+        <mxCell id="e_chroma_storage" edge="1" parent="1" source="chroma" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;" target="storage" value="montage /chroma/chroma&#xa;(R2 persistance)">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="logs" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=9;" value="Azure Log Stream&#xa;(az webapp log tail)&#xa;latence, erreurs, garde-fous" vertex="1">
+          <mxGeometry height="60" width="220" x="1060" y="450" as="geometry" />
+        </mxCell>
+        <mxCell id="e_basic_logs" edge="1" parent="1" source="basic" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;dashed=1;" target="logs">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="note" parent="1" style="text;html=1;align=left;verticalAlign=top;fontSize=9;fontColor=#666666;" value="Mots de passe/clés jamais représentés en clair (cf. Réponse 2, conception/deploiement/reponses-deploiement.md).&#xa;Diagramme complémentaire à velmo2-deploiement-azure.drawio (vue cible UML) — celui-ci documente l'état réel avec les identifiants de ressources et associations effectivement observés." vertex="1">
+          <mxGeometry height="50" width="900" x="40" y="600" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

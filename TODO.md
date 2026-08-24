@@ -28,7 +28,7 @@
 
 ### Point 9 — Documentation et présentation
 - [x] Runbook « Déployer et exploiter Velmo 2.0 sur Azure » → `docs/runbook_deploiement_azure.md`
-- [ ] Capture du portail Azure montrant le groupe de ressources `dlegrandRG` (manuel, à faire par David)
+- [x] Capture du portail Azure montrant le groupe de ressources `dlegrandRG` → `docs/img/azure_deploiement.png`, intégrée au runbook
 - [ ] Préparer présentation 5-10 min (agent en ligne, mémoire, garde-fous, signaux)
 
 ## 🟠 Nettoyage avant de considérer le déploiement "fini"
