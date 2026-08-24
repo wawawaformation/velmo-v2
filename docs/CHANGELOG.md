@@ -7,6 +7,10 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Deploy: trigger image rebuild
+
+Images not available in ghcr.io after infrastructure restart — force GitHub Actions to rebuild and push.
+
 ### Décision — cible de déploiement : Azure
 
 Point d'arrêt tranché après plusieurs chantiers en attente (Langfuse, jobs CI
