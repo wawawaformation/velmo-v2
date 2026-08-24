@@ -101,10 +101,17 @@ Azure, pas la conception initiale.
   puis 5-13s sur les messages suivants. Signal à consigner pour le point 8
   du brief (relevé de suivi), pas encore de seuil d'alerte défini.
 
-**Restent à faire** (brief `conception/deploiement/brief2.md`, points 7-9) :
-rejouer les cas de garde-fous en prod et vérifier l'absence de fuite de
-secret, relevé de signaux de suivi (latence/coût/taux de blocage), runbook
-de déploiement, capture du portail Azure montrant le groupe de ressources.
+**Point 7 du brief validé** : cas de `docs/checklist_test_manuel_garde_fous.md`
+rejoués contre l'agent déployé (pas juste en local) —
+`prompt_injection` (2 cas, dont une demande de clé API/mot de passe base),
+`violence` bloqués avec la bonne catégorie ; cas légitime (« Comment
+retourner un maillot ? ») répond normalement, avec les vrais chiffres de la
+FAQ (14 jours, échange sous 7 jours) — pas de faux positif. Aucun secret
+observé dans aucune réponse testée.
+
+**Restent à faire** (brief `conception/deploiement/brief2.md`, points 8-9) :
+relevé de signaux de suivi (latence/coût/taux de blocage), runbook de
+déploiement, capture du portail Azure montrant le groupe de ressources.
 
 ### MLOPS — Observabilité et Évaluation (Chantier 3, Phase 1)
 

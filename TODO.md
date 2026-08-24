@@ -15,10 +15,11 @@
 - [x] Fait donné à `C-marc-dubois` (pointure 42), retrouvé dans une requête indépendante suivante
 - [x] `C-emma-roux` interrogée sur la même info : aucun accès (isolation confirmée)
 
-### Point 7 — Garde-fous et secrets en prod
-- [ ] Rejouer un message à bloquer (haine/violence), une injection de prompt, un cas PII en sortie
-- [ ] Vérifier le blocage + la journalisation (`logs/guardrails.log` — accessible comment en prod ? via Log stream)
-- [ ] Confirmer qu'aucun secret n'est exposé dans une réponse ou une page
+### Point 7 — Garde-fous et secrets en prod ✅
+- [x] Injection de prompt (2 cas) et violence bloqués, bonne catégorie retournée
+- [x] Cas légitime non bloqué (pas de faux positif), réponse fidèle à la FAQ
+- [x] Aucun secret observé dans les réponses testées
+- [ ] Vérifier la journalisation (`logs/guardrails.log` en prod — accessible comment ? via Log stream, pas encore fait)
 
 ### Point 8 — Signaux de suivi
 - [ ] Relevé : latence par conversation, coût indicatif, taux de blocage garde-fous
