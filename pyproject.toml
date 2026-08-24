@@ -15,6 +15,7 @@ dependencies = [
     # pyyaml n'arrivait que transitivement (chromadb, langchain-core...) — si
     # l'un d'eux s'en passait, le gate qualité cassait en ImportError.
     "pyyaml>=6,<7",
+    "langfuse>=4.14.4",
 ]
 
 [project.optional-dependencies]

@@ -9,6 +9,8 @@ conversation.
 
 from __future__ import annotations
 
+import os
+
 from langchain.agents import create_agent
 from langchain_core.messages import HumanMessage
 
@@ -70,9 +72,19 @@ class Agent:
         )
         result = graph.invoke(
             {"messages": [HumanMessage(message)]},
-            config={"callbacks": [LatencyCallbackHandler()]},
+            config={"callbacks": _build_callbacks(), "metadata": {"langfuse_user_id": user_id}},
         )
         return result["messages"][-1].content
+
+
+def _build_callbacks() -> list:
+    """Callbacks LangChain : latence (toujours) + tracing Langfuse (si configuré)."""
+    callbacks = [LatencyCallbackHandler()]
+    if os.getenv("LANGFUSE_PUBLIC_KEY") and os.getenv("LANGFUSE_SECRET_KEY"):
+        from langfuse.langchain import CallbackHandler as LangfuseCallbackHandler
+
+        callbacks.append(LangfuseCallbackHandler())
+    return callbacks
 
 
 def build_default_agent(session=None, kb=None, temperature: float | None = None) -> Agent:
