@@ -1,0 +1,16 @@
+meta {
+  name: 1. Agent en ligne — liste clients
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/users
+  body: none
+  auth: none
+}
+
+docs {
+  Montre que l'agent tourne réellement sur Azure (pas en local) et lit
+  Postgres (table customers, le référentiel client — pas la mémoire).
+}

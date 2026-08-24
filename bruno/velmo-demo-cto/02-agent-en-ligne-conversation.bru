@@ -1,0 +1,27 @@
+meta {
+  name: 2. Agent en ligne — conversation réelle (tool-calling)
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/messages
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "user_id": "C-marc-dubois",
+    "message": "Quel est le statut de ma commande O-2024-0101 ?"
+  }
+}
+
+docs {
+  Conversation réelle contre le vrai LLM Azure (gpt-5.4) + outil de
+  consultation de commande (Postgres). guardrail_category doit être null.
+}

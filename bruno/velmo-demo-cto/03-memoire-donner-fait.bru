@@ -1,0 +1,27 @@
+meta {
+  name: 3. Mémoire (R2) — donner un fait
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/messages
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "user_id": "C-marc-dubois",
+    "message": "Retiens que ma pointure est du 42."
+  }
+}
+
+docs {
+  Donne un fait à Marc Dubois. Attendre ~20-30s (tick du scheduler de
+  consolidation mémoire) avant la requête suivante.
+}

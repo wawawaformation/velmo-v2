@@ -1,0 +1,28 @@
+meta {
+  name: 4. Mémoire (R2) — retrouver le fait (nouvelle requête)
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/messages
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "user_id": "C-marc-dubois",
+    "message": "Quelle est ma pointure ?"
+  }
+}
+
+docs {
+  Requête HTTP totalement indépendante de la précédente (pas de session,
+  pas de cookie) — si l'agent répond "42", la persistance en base est
+  prouvée, pas une mémoire en RAM du process.
+}

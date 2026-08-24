@@ -131,6 +131,28 @@ rendre la main sans rien afficher — la création réussit malgré cette
 apparence d'échec, à vérifier avec `az webapp config ssl list` plutôt que
 de se fier au message affiché.
 
+**Scénario de démo CTO (point 9 du brief, présentation)** : collection
+Bruno `bruno/velmo-demo-cto/` (7 requêtes numérotées, environnement `azure`
+pointant sur `https://velmo.koabana.fr`) + script chronométré
+`docs/script_presentation_cto.md` (8-9 min) couvrant exactement les 4
+éléments demandés par le brief — agent en ligne, persistance/isolation
+mémoire (R2/R3), garde-fous, signaux de suivi. Les 7 requêtes ont été
+rejouées en direct contre l'agent réellement déployé avant d'être figées
+dans la collection — un écart constaté au passage : le statut de commande
+revient parfois traduit ("préparée"), parfois brut ("prepared"), le LLM
+rédigeant librement à partir du résultat de l'outil ; le script a été
+corrigé pour ne pas citer une formulation figée comme garantie.
+
+**Runbook — clarifier que `git push` ne déploie pas automatiquement** :
+question posée en cours de session sur le rôle réel de `ghcr.io` dans le
+flux CD (l'image transite par GitHub Container Registry, pas directement
+par le dépôt Git). Ajout d'une section §1.0 dans
+`docs/runbook_deploiement_azure.md` explicitant le flux complet et le
+point critique : Azure ne re-pull jamais automatiquement une image sur le
+même tag, `az webapp sitecontainers update` reste une étape manuelle
+obligatoire après chaque push tant que `promote-prod`/le déploiement
+continu ne sont pas implémentés.
+
 **Décision — frontend Vue.js non déployé sur Azure** : le dossier
 `frontend/` reste local/démo uniquement. Raisons : le brief
 `brief2.md` ne le mentionne dans aucun de ses points ni livrables (seuls

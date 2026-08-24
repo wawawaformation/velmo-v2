@@ -1,0 +1,28 @@
+meta {
+  name: 5. Mémoire (R3) — isolation entre utilisateurs
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/messages
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "user_id": "C-emma-roux",
+    "message": "Quelle est ma pointure ?"
+  }
+}
+
+docs {
+  Même question, utilisateur DIFFÉRENT (C-emma-roux). L'agent ne doit
+  strictement rien savoir de la pointure de Marc Dubois — isolation par
+  user_id (R3), non négociable.
+}

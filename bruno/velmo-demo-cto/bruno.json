@@ -1,0 +1,6 @@
+{
+  "version": "1",
+  "name": "Velmo 2.0 — Démo CTO (Azure)",
+  "type": "collection",
+  "ignore": ["node_modules", ".git"]
+}

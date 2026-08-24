@@ -35,6 +35,27 @@ conception initiale.
 
 ## 1. Déployer une nouvelle version de l'agent
 
+### 1.0. Comprendre le flux (`git push` ≠ déploiement)
+
+```
+git push (dev/main)
+   → GitHub Actions (cd.yml, job docker-build)
+   → image construite et poussée sur GitHub Container Registry
+     (ghcr.io/wawawaformation/velmo-v2:<branche>, :<sha>)
+   → velmo-basic va chercher l'image sur ghcr.io (pas directement sur
+     GitHub/le code source) au moment où on le lui demande explicitement
+```
+
+**Point critique** : Azure App Service **ne re-pull pas automatiquement**
+une nouvelle image poussée sur le même tag (`:dev`). Après un `git push`,
+même une fois l'image reconstruite sur `ghcr.io`, `velmo-basic` continue de
+tourner avec l'**ancienne** image tant qu'on n'a pas relancé explicitement
+l'étape 1.2 ci-dessous (`az webapp sitecontainers update`) — pas de
+déploiement continu configuré à ce jour (cf. job `promote-prod`, non
+implémenté, `TODO.md`). Un simple `git push` sans cette étape manuelle
+donne l'illusion que rien n'a changé en prod, alors que le code a bien
+changé sur GitHub/ghcr.io.
+
 ### 1.1. Construire et pousser l'image
 
 Automatique via `.github/workflows/cd.yml` (job `docker-build`) à chaque
