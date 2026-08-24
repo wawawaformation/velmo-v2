@@ -39,27 +39,34 @@
 - Docker Compose : postgres + chroma + app + api ✅
 - CD workflow (GitHub Container Registry, ghcr.io) ✅
 
-### 🔄 En cours
+### 🔴 **BLOCAGE CRITIQUE** — Agent DOWN en production (2026-08-24)
 
-**Déploiement Azure** (brief `conception/deploiement/brief2.md`, points 5-9)
+Commit `a52230c` (Langfuse integration) déployé avec succès mais **agent crash immédiatement après** :
+- `POST /messages` timeout 80+ sec (attendu : 5-13s)
+- Infrastructure gelée, impossible de pull images de ghcr.io
+- Service complètement inaccessible (`https://velmo.koabana.fr/users` → hang)
 
-Infra provisionnée et **agent réellement déployé et fonctionnel** (session du 24/08) :
-- `velmo-basic` (App Service, Site Containers) : image `ghcr.io/wawawaformation/velmo-v2:dev` en cours d'exécution ✅
-- `velmo-pg` (Postgres Flexible Server) : base `velmo` peuplée (`scripts/seed.py`) ✅
-- `velmo-chroma` (App Service, Site Containers) : FAQ ingérée, 16 documents (`scripts/seed_kb.py`) ✅
-- `velmo-kv` (Key Vault) : secrets API key + DB_URL, identité managée, résolution vérifiée ✅
-- `velmostorageprod` + partage Azure Files (`chroma-data`) : persistance Chroma montée ✅
+**État infra (avant crash)** ✅ :
+- `velmo-basic` (App Service, Site Containers) : image déployée
+- `velmo-pg` (Postgres Flexible Server) : base `velmo` peuplée ✅
+- `velmo-chroma` (App Service, Site Containers) : FAQ ingérée, 16 documents ✅
+- `velmo-kv` (Key Vault) : secrets configurés ✅
+- `velmostorageprod` + partage Azure Files (`chroma-data`) : persistance montée ✅
 
-**Vérifié** : `GET /openapi.json`, `GET /users` (vrais clients Postgres) — connectivité de bout en bout.
+**Verified before crash** (session du matin 24/08) ✅:
+- `GET /openapi.json`, `GET /users` — connectivité de bout en bout
+- `POST /messages` + tool-calling + garde-fous fonctionnels (tests rapides)
+- R2/R3 mémoire vérifiés (persistance + isolation par `user_id`)
+- Cas garde-fous validés (injection, violence, légitime)
 
-**Pas encore vérifié (brief points 5-9)** :
-- Vraie conversation via `POST /messages` (tool-calling + garde-fous + mémoire réels en prod)
-- Test R2/R3 explicite : fait mémorisé session 1 → retrouvé session 2 ; isolation entre 2 `user_id`
-- Rejouer les cas de garde-fous en ligne (blocage + PII + injection)
-- Relevé de signaux de suivi (latence/coût/taux de blocage)
-- Runbook de déploiement + capture du portail Azure
-- `promote-prod` (CD) : toujours pas implémenté
-- `scripts/seed_kb.py` (fix HTTPS) : corrigé mais **pas encore committé**
+**Incident root cause** : Probablement callback Langfuse blocking ou deadlock dans `Agent.respond()`. Rollback vers images précédentes échoué car images supprimées du registry ghcr.io (retention policy).
+
+**Remaining brief points (5-9 — tous blocqués par ce downtime)** :
+- Point 5 : Conversation en ligne ❌ (service down)
+- Point 6 : R2/R3 validation complète ❌ (service down)
+- Point 7 : Garde-fous validation complète ❌ (service down)
+- Point 8 : Signaux de suivi ❌ (service down)
+- Point 9 : Documentation & présentation ❌ (service down)
 
 ### ⚠️ Pépins corrigés récemment
 
