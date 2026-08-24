@@ -21,9 +21,10 @@
 - [x] Aucun secret observé dans les réponses testées
 - [ ] Vérifier la journalisation (`logs/guardrails.log` en prod — accessible comment ? via Log stream, pas encore fait)
 
-### Point 8 — Signaux de suivi
-- [ ] Relevé : latence par conversation, coût indicatif, taux de blocage garde-fous
-- [ ] Consulter/exporter le Log stream Azure (déjà utilisé pour le debug déploiement)
+### Point 8 — Signaux de suivi ✅ (voir `conception/deploiement/signaux-suivi.md`)
+- [x] Relevé latence (9 messages, moyenne ≈ 5,6s hors démarrage à froid) + taux de blocage (3/9)
+- [x] Log stream Azure consulté (pendant le debug déploiement)
+- [ ] Coût : non mesurable via CLI sur cet abonnement de formation — capture "Analyse des coûts" du portail à faire manuellement (point 9)
 
 ### Point 9 — Documentation et présentation
 - [ ] Runbook « Déployer et exploiter Velmo 2.0 sur Azure » (`docs/` ou `conception/deploiement/`)

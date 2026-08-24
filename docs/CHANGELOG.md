@@ -109,9 +109,17 @@ retourner un maillot ? ») répond normalement, avec les vrais chiffres de la
 FAQ (14 jours, échange sous 7 jours) — pas de faux positif. Aucun secret
 observé dans aucune réponse testée.
 
-**Restent à faire** (brief `conception/deploiement/brief2.md`, points 8-9) :
-relevé de signaux de suivi (latence/coût/taux de blocage), runbook de
-déploiement, capture du portail Azure montrant le groupe de ressources.
+**Point 8 du brief validé** : relevé produit dans
+`conception/deploiement/signaux-suivi.md` — latence moyenne ≈5,6s hors
+démarrage à froid (43,6s au premier appel), taux de blocage garde-fous 3/9
+sur la session de test manuel, aucun secret exposé. Coût non mesurable via
+`az consumption usage list` sur cet abonnement de formation partagé (l'API
+renvoie `None` pour toutes les ressources) — noté comme limite, capture
+manuelle de la vue "Analyse des coûts" du portail recommandée à la place.
+
+**Restent à faire** (brief `conception/deploiement/brief2.md`, point 9) :
+runbook de déploiement, capture du portail Azure montrant le groupe de
+ressources.
 
 ### MLOPS — Observabilité et Évaluation (Chantier 3, Phase 1)
 
