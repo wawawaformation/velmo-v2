@@ -131,6 +131,16 @@ rendre la main sans rien afficher — la création réussit malgré cette
 apparence d'échec, à vérifier avec `az webapp config ssl list` plutôt que
 de se fier au message affiché.
 
+**Décision — frontend Vue.js non déployé sur Azure** : le dossier
+`frontend/` reste local/démo uniquement. Raisons : le brief
+`brief2.md` ne le mentionne dans aucun de ses points ni livrables (seuls
+l'API/l'agent sont exigés en ligne) ; son déploiement soulèverait une
+question d'architecture non tranchée (préfixe `/api` géré uniquement par
+le proxy Vite en dev, aucun CORS configuré côté FastAPI — choix entre
+servir le front depuis `velmo-basic` en même origine ou une ressource
+séparée avec CORS). Décision explicite de l'auteur du projet : ne pas
+déployer, question reportée sans échéance.
+
 **Point 9 du brief (documentation)** : runbook rédigé
 (`docs/runbook_deploiement_azure.md`) — ressources du groupe, procédure de
 déploiement/redéploiement, gestion des secrets, seed des bases, checklist
