@@ -7,6 +7,30 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Incident — Langfuse integration causes timeout on deployed agent (2026-08-24)
+
+**Commit `a52230c`** ("Feat: minimal Langfuse tracing on Agent.respond()") was built and deployed successfully on Azure, but caused immediate operational failure:
+- `POST /messages` timed out after 80+ seconds (expected latency: 5-13s)
+- Both `/users` and `/messages` endpoints became unresponsive
+- Container remained stuck in this state (no graceful shutdown)
+
+**Root cause not fully diagnosed yet**, but integration point is the new `_build_callbacks()` function and conditional `LangfuseCallbackHandler` added to `Agent.respond()`. Possible causes: callback initialization deadlock, network blocking on Langfuse cloud connection, or misuse of the handler's synchronous/async interface.
+
+**Recovery attempts hit cascading failures** :
+1. Attempted rollback to commit `3645607` (Bruno demo) — image no longer exists in ghcr.io (likely purged by registry retention policy after several redeploys)
+2. Attempted rollback to `384cc56` (Docs update) — image not found
+3. Attempted fallback to tag `latest` — no such tag exists
+4. Attempted redeploy with tag `dev` — image exists locally (confirmed via `docker pull`) but Azure cannot download it (reason unknown — possible network, credentials, or rate-limiting issue)
+
+**Infrastructure now in degraded state** : `velmo-basic` App Service stuck unable to pull any image. GitHub Actions workflows continue to build and push images successfully (all runs report success), but Azure deployment pipeline is blocked.
+
+**Next session action items** :
+1. Revert commit `a52230c` (remove Langfuse integration) and redeploy without it
+2. Diagnose why Azure cannot pull public images from ghcr.io (may require logging, network inspection, or switching to Azure Container Registry)
+3. Once stable, diagnose Langfuse integration bug and re-implement with proper error handling
+
+**Note on ghcr.io cleanup** : No explicit retention policy found in repository settings, but historical images (older than ~4 hours) are no longer accessible. This suggests either automatic cleanup or a timeout on image availability. Future deployments should tag and retain critical images explicitly or use a different registry strategy.
+
 ### Deploy: trigger image rebuild
 
 Images not available in ghcr.io after infrastructure restart — force GitHub Actions to rebuild and push.

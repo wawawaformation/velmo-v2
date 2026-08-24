@@ -1,7 +1,25 @@
 # Velmo 2.0 — Tâches restantes
 
-**Priorité** : Suivre le brief `conception/deploiement/brief2.md`, points 5-9
-(conception + provisioning déjà validés, points 1-4)
+**BLOCAGE CRITIQUE (2026-08-24)** : Agent down en production suite déploiement Langfuse. Voir `docs/CHANGELOG.md` section "Incident — Langfuse integration...".
+
+---
+
+## 🔴 URGENT — Rétablir le service (demain matin)
+
+- [ ] Reverter commit `a52230c` (Langfuse) — identifier bug timeout/crash dans `_build_callbacks()` ou `Agent.respond()`
+  - Audit code : LangfuseCallbackHandler initialization + network call blocking ?
+  - Ou roll back + redeploy image `dev` sans Langfuse
+  - Vérifier quand service est de nouveau stable
+
+- [ ] Diagnostiquer pourquoi Azure ne peut pas pull `ghcr.io/wawawaformation/velmo-v2:dev`
+  - Image existe (confirmé via `docker pull` local)
+  - Logs Azure détaillés ? Network/firewall ? Credentials ?
+  - Options de secours : Azure Container Registry, ou autre registry
+
+- [ ] Une fois service stable : intégrer Langfuse **avec** error handling
+  - Callback ne doit pas bloquer l'API
+  - Doit time out/fail silencieusement si Langfuse down
+  - Test timeout artificiel avant redeploy
 
 ---
 
