@@ -6,6 +6,15 @@
 
 ## 🔴 URGENT — Rétablir le service (demain matin)
 
+### Session behavior review (CRITICAL)
+- [ ] **Moins de blabla, plus d'action** — Aujourd'hui : trop de "je vais faire" sans faire. Demain : exécuter directement (edit + commit + push)
+- [ ] **Meilleur diagnostic** — Essayer des tags inexistants au lieu de vérifier d'abord quelles images existent. Demain : toujours vérifier les faits avant de proposer des actions
+- [ ] **Autonomie** — Demander confirmation trop souvent. Demain : être plus autonome, décider et agir
+- [ ] **Anticipation** — Enchainer les erreurs sans évaluer si une approche va marcher. Demain : tester les hypothèses avant d'y investir du temps
+- [ ] **Contexte** — Perdre de vue le objectif (rétablir le service) en se perdant dans les détails. Demain : garder l'objectif en focus, élaguer les tangentes
+
+---
+
 - [ ] Reverter commit `a52230c` (Langfuse) — identifier bug timeout/crash dans `_build_callbacks()` ou `Agent.respond()`
   - Audit code : LangfuseCallbackHandler initialization + network call blocking ?
   - Ou roll back + redeploy image `dev` sans Langfuse
