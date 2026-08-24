@@ -1,0 +1,83 @@
+<mxfile host="Electron">
+  <diagram name="Déploiement Azure — cible" id="deploiement-azure-cible">
+    <mxGraphModel dx="1653" dy="880" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="1150" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;align=left;verticalAlign=middle;fontSize=16;fontStyle=1;" value="Velmo 2.0 — Diagramme de déploiement UML (cible Azure)" vertex="1">
+          <mxGeometry height="30" width="800" x="20" y="10" as="geometry" />
+        </mxCell>
+        <mxCell id="Pt_EpRXmrXm3MwFPZfwi-1" edge="1" parent="1" source="browser" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="appservice" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="browser" parent="1" style="shape=cube;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" value="«device»&lt;br&gt;VueJS ou autre client API REST" vertex="1">
+          <mxGeometry height="70" width="220" x="580" y="30" as="geometry" />
+        </mxCell>
+        <mxCell id="appservice" parent="1" style="shape=cube;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;verticalAlign=top;spacingTop=8;" value="«execution environment»&#xa;App Service — Web App (Linux, conteneur)&#xa;&#xa;garde-fou entrée → mémoire (lecture) →&#xa;Azure OpenAI → garde-fou sortie →&#xa;mémoire (écriture)&#xa;— détail : velmo2-pipeline-global_reel.drawio —" vertex="1">
+          <mxGeometry height="140" width="360" x="510" y="150" as="geometry" />
+        </mxCell>
+        <mxCell id="e_browser_app" edge="1" parent="1" source="browser" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;" target="appservice" value="API">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="artifact" parent="1" style="shape=note;whiteSpace=wrap;html=1;size=14;fillColor=#f5f5f5;strokeColor=#666666;fontSize=9;" value="«artifact»&#xa;ghcr.io/.../velmo-v2:&lt;sha&gt;" vertex="1">
+          <mxGeometry height="60" width="180" x="150" y="220" as="geometry" />
+        </mxCell>
+        <mxCell id="registry" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=9;" value="GitHub Container Registry&#xa;(ghcr.io)&#xa;— docker-build, cd.yml —" vertex="1">
+          <mxGeometry height="60" width="180" x="150" y="90" as="geometry" />
+        </mxCell>
+        <mxCell id="e_registry_artifact" edge="1" parent="1" source="registry" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;dashed=1;" target="artifact">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_artifact_app" edge="1" parent="1" source="artifact" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;dashed=1;" target="appservice" value="«deploy»&lt;br&gt;pull image&lt;br&gt;ghrc">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="openai" parent="1" style="shape=cube;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;" value="«node»&#xa;Azure OpenAI&#xa;(gpt-5.4, gpt-5.4-nano)" vertex="1">
+          <mxGeometry height="80" width="220" x="1090" y="180" as="geometry" />
+        </mxCell>
+        <mxCell id="e_app_openai" edge="1" parent="1" source="appservice" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;" target="openai" value="HTTPS&#xa;(clé via Key Vault)">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="keyvault" parent="1" style="shape=cube;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" value="«node»&#xa;Azure Key Vault" vertex="1">
+          <mxGeometry height="70" width="200" x="140" y="380" as="geometry" />
+        </mxCell>
+        <mxCell id="e_app_keyvault" edge="1" parent="1" source="appservice" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;dashed=1;" target="keyvault" value="identité managée&#xa;(lecture secrets : clé LLM, DB_URL)">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="490" y="405" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="logs" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=9;" value="Journaux&#xa;stdout → Azure Log Stream&#xa;(latence, erreurs — décision Réponse 2)" vertex="1">
+          <mxGeometry height="70" width="220" x="1070" y="350" as="geometry" />
+        </mxCell>
+        <mxCell id="e_app_logs" edge="1" parent="1" source="appservice" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;dashed=1;" target="logs">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1130" y="405" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="postgres" parent="1" style="shape=cube;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" value="«node»&#xa;Azure Database for PostgreSQL&#xa;— Flexible Server —&#xa;(faits à clé connue, R2/R3)" vertex="1">
+          <mxGeometry height="90" width="260" x="360" y="550" as="geometry" />
+        </mxCell>
+        <mxCell id="chroma" parent="1" style="shape=cube;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" value="«execution environment»&#xa;Conteneur Chroma&#xa;(faits imprévisibles + épisodes, R2/R3)" vertex="1">
+          <mxGeometry height="90" width="260" x="750" y="420" as="geometry" />
+        </mxCell>
+        <mxCell id="e_app_postgres" edge="1" parent="1" source="appservice" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;" target="postgres" value="lecture/écriture mémoire&#xa;(R2 persistance, R3 isolation user_id)">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_app_chroma" edge="1" parent="1" source="appservice" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;" target="chroma" value="lecture/écriture mémoire">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="storage" parent="1" style="shape=cube;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" value="«node»&#xa;Storage Account&#xa;— partage Azure Files —" vertex="1">
+          <mxGeometry height="70" width="240" x="760" y="580" as="geometry" />
+        </mxCell>
+        <mxCell id="e_chroma_storage" edge="1" parent="1" source="chroma" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=9;" target="storage" value="montage&#xa;/chroma/chroma (R2 persistance)">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

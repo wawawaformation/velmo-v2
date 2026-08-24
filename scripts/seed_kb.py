@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from urllib.parse import urlparse
 
 from dotenv import load_dotenv
 
@@ -20,9 +21,20 @@ def main() -> None:
     import chromadb
     from chromadb.utils import embedding_functions
 
-    client = chromadb.HttpClient(
-        host=os.getenv("CHROMA_HOST", "chroma"), port=int(os.getenv("CHROMA_PORT", "8000"))
-    )
+    chroma_url = os.getenv("CHROMA_URL")
+    if chroma_url:
+        # Même logique que kb_store.get_kb() : host/port/ssl dérivés de l'URL
+        # (nécessaire pour Chroma exposé en HTTPS, ex. Azure App Service).
+        parsed = urlparse(chroma_url)
+        host = parsed.hostname or "localhost"
+        port = parsed.port or (443 if parsed.scheme == "https" else 8000)
+        ssl = parsed.scheme == "https"
+    else:
+        host = os.getenv("CHROMA_HOST", "chroma")
+        port = int(os.getenv("CHROMA_PORT", "8000"))
+        ssl = False
+
+    client = chromadb.HttpClient(host=host, port=port, ssl=ssl)
     embedder = embedding_functions.SentenceTransformerEmbeddingFunction(  # type: ignore[attr-defined]
         model_name=os.getenv("EMBEDDING_MODEL", "intfloat/multilingual-e5-small")
     )

@@ -33,6 +33,66 @@ Brief officiel reçu et stocké tel quel : `conception/deploiement/brief2.md` (d
 
 **`.github/workflows/cd.yml` créé, séparé de `ci.yml`** : CD (build + déploiement) distincte de la CI (qualité/tests), à la demande explicite plutôt que de mélanger `docker-build` dans `ci.yml`. Job `docker-build` (dev/main) : construit l'image (même Dockerfile que le CLI, seule la commande de démarrage change — comme `docker-compose.yml` le fait déjà pour le service `api`) et la pousse sur `ghcr.io`, taguée par SHA (référence immuable) et par nom de branche. Authentification via `GITHUB_TOKEN` intégré, pas de secret supplémentaire. Écart assumé à « build once, promote everywhere » (Réponse 5) : image reconstruite sur `dev` et `main`, pas retaguée depuis un unique build — plus simple pour ce premier déploiement. Vérifié en CI : build et push réussis.
 
+### Déploiement Azure — provisioning complet, premier déploiement réel, et deux bugs corrigés
+
+Reprise après deux semaines d'interruption. Constat : l'infra Azure
+(Postgres, Chroma, Storage Account) avait en réalité déjà été provisionnée
+avant la coupure (exports `deploye/*.json` du 7 août), mais
+`reponses-deploiement.md` indiquait encore *« à provisionner »* — tableau
+« Position retenue » mis à jour pour refléter l'état réel constaté sur
+Azure, pas la conception initiale.
+
+- **Key Vault (`velmo-kv`) branché sur `velmo-basic`** : identité managée
+  système activée, rôle `Key Vault Secrets User` accordé sur le périmètre du
+  coffre (pas d'accès plus large), secrets `AZURE-AI-INFERENCE-API-KEY` et
+  `DB-URL` déposés et référencés en App Settings via
+  `@Microsoft.KeyVault(SecretUri=...)` — résolution vérifiée (l'agent
+  démarre et lit les deux). Mot de passe admin de `velmo-pg` régénéré au
+  passage (perdu depuis les vacances).
+- **Premier déploiement réel de l'agent sur `velmo-basic`** (mode *Site
+  Containers*, image `ghcr.io/wawawaformation/velmo-v2:dev`, publique —
+  aucun credential de registre nécessaire), deux incidents corrigés en
+  chaîne avant d'obtenir un démarrage sain :
+  1. La commande de démarrage `uv run uvicorn ...` re-synchronisait les
+     dépendances à chaque démarrage du conteneur — y compris `ruff`/`mypy`
+     (outils de dev pourtant exclus par `--no-dev` au build), ~130s perdues.
+     Corrigé en appelant directement le binaire du venv
+     (`/app/.venv/bin/uvicorn velmo.api:app --host 0.0.0.0 --port 8000`),
+     sans repasser par `uv run`.
+  2. Une fois ce point réglé, l'appli plantait toujours (`exit code 3`) —
+     cause réelle : seuls les deux secrets (Key Vault) avaient été
+     configurés, jamais `AZURE_AI_INFERENCE_ENDPOINT` ni les autres
+     paramètres non sensibles (modèles, endpoint Content Safety,
+     `EMBEDDING_MODEL`). `Agent.api:lifespan` lève une `RuntimeError`
+     explicite dans ce cas — comportement voulu (cf. migration
+     `create_agent()`, pas de repli silencieux sur un faux LLM), pas un
+     bug de l'agent. Complété en App Settings.
+  3. Vérifié : `GET /openapi.json` répond, schéma complet.
+- **Bases peuplées côté Azure** : règle de pare-feu `AllowAzureServices`
+  ajoutée sur `velmo-pg` (plage conventionnelle `0.0.0.0`–`0.0.0.0`,
+  autorise les services Azure sans ouvrir au public) ; base `velmo` créée
+  puis peuplée via `scripts/seed.py` (catalogue/clients/commandes) — vérifié
+  via `GET /users` (retourne les vrais clients Postgres, pas un tableau
+  vide). FAQ ingérée dans Chroma via `scripts/seed_kb.py` (16 documents).
+- **Bug corrigé — `scripts/seed_kb.py` ne supportait pas HTTPS** : le script
+  se connectait en HTTP brut (`chromadb.HttpClient(host=CHROMA_HOST,
+  port=CHROMA_PORT)`, sans `ssl`) — jamais un problème en local
+  (`docker-compose`, réseau interne HTTP), mais bloquant contre
+  `velmo-chroma` qui n'est joignable que via HTTPS (port 443, TLS géré par
+  App Service). `kb_store.get_kb()` gérait déjà ce cas (parsing de
+  `CHROMA_URL` via `urlparse`, `ssl = scheme == "https"`) mais cette logique
+  n'était pas réutilisée par le script de seed. Même logique reprise dans
+  `seed_kb.py` : priorité à `CHROMA_URL` si présent (avec détection SSL),
+  repli sur `CHROMA_HOST`/`CHROMA_PORT` sinon — comportement local
+  (`make seed-kb`) inchangé.
+
+**Restent à faire** (brief `conception/deploiement/brief2.md`, points 5-9) :
+vérifier une vraie conversation en ligne (`POST /messages`), le test
+d'acceptance R2/R3 explicite (fait mémorisé en session 1 retrouvé en
+session 2, isolation entre deux `user_id`), rejouer les cas de garde-fous en
+prod, relevé de signaux de suivi (latence/coût/taux de blocage), runbook de
+déploiement, capture du portail Azure montrant le groupe de ressources.
+
 ### MLOPS — Observabilité et Évaluation (Chantier 3, Phase 1)
 
 **POC LangFuse Cloud — Fondations complètes** (branche `poc-langfuse`, 8 commits)
