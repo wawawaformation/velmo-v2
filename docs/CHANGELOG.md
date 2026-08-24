@@ -117,9 +117,13 @@ sur la session de test manuel, aucun secret exposé. Coût non mesurable via
 renvoie `None` pour toutes les ressources) — noté comme limite, capture
 manuelle de la vue "Analyse des coûts" du portail recommandée à la place.
 
-**Restent à faire** (brief `conception/deploiement/brief2.md`, point 9) :
-runbook de déploiement, capture du portail Azure montrant le groupe de
-ressources.
+**Point 9 du brief (documentation)** : runbook rédigé
+(`docs/runbook_deploiement_azure.md`) — ressources du groupe, procédure de
+déploiement/redéploiement, gestion des secrets, seed des bases, checklist
+de vérification post-déploiement, table des incidents rencontrés pendant
+cette session avec leur fix. **Reste à faire** : capture du portail Azure
+montrant le groupe de ressources (manuelle, hors périmètre de l'agent) et
+la présentation orale.
 
 ### MLOPS — Observabilité et Évaluation (Chantier 3, Phase 1)
 

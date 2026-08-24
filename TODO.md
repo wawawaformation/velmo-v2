@@ -27,8 +27,8 @@
 - [ ] Coût : non mesurable via CLI sur cet abonnement de formation — capture "Analyse des coûts" du portail à faire manuellement (point 9)
 
 ### Point 9 — Documentation et présentation
-- [ ] Runbook « Déployer et exploiter Velmo 2.0 sur Azure » (`docs/` ou `conception/deploiement/`)
-- [ ] Capture du portail Azure montrant le groupe de ressources `dlegrandRG`
+- [x] Runbook « Déployer et exploiter Velmo 2.0 sur Azure » → `docs/runbook_deploiement_azure.md`
+- [ ] Capture du portail Azure montrant le groupe de ressources `dlegrandRG` (manuel, à faire par David)
 - [ ] Préparer présentation 5-10 min (agent en ligne, mémoire, garde-fous, signaux)
 
 ## 🟠 Nettoyage avant de considérer le déploiement "fini"
