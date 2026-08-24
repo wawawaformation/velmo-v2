@@ -86,12 +86,25 @@ Azure, pas la conception initiale.
   repli sur `CHROMA_HOST`/`CHROMA_PORT` sinon — comportement local
   (`make seed-kb`) inchangé.
 
-**Restent à faire** (brief `conception/deploiement/brief2.md`, points 5-9) :
-vérifier une vraie conversation en ligne (`POST /messages`), le test
-d'acceptance R2/R3 explicite (fait mémorisé en session 1 retrouvé en
-session 2, isolation entre deux `user_id`), rejouer les cas de garde-fous en
-prod, relevé de signaux de suivi (latence/coût/taux de blocage), runbook de
-déploiement, capture du portail Azure montrant le groupe de ressources.
+**Points 5 et 6 du brief validés contre l'agent réellement déployé** :
+- Point 5 (conversation en ligne) : `POST /messages` testé en conditions
+  réelles (`gpt-5.4` via Azure AI Inference) — demande de statut de
+  commande correctement gérée (relance pour le numéro, puis refus propre
+  sur un numéro inventé/non accessible, `owned_order()` inchangé).
+- Point 6 (R2 persistance + R3 isolation) : fait donné à `C-marc-dubois`
+  (« ma pointure est du 42 ») retrouvé dans une requête HTTP indépendante
+  ultérieure (persistance confirmée) ; interrogé avec `C-emma-roux`, aucune
+  connaissance de cette information (isolation confirmée) — les deux
+  exigences non négociables tiennent en production, pas seulement en local.
+- Latence observée : 43,6s sur le tout premier message (démarrage à froid —
+  chargement du modèle d'embeddings, premières connexions Postgres/Chroma),
+  puis 5-13s sur les messages suivants. Signal à consigner pour le point 8
+  du brief (relevé de suivi), pas encore de seuil d'alerte défini.
+
+**Restent à faire** (brief `conception/deploiement/brief2.md`, points 7-9) :
+rejouer les cas de garde-fous en prod et vérifier l'absence de fuite de
+secret, relevé de signaux de suivi (latence/coût/taux de blocage), runbook
+de déploiement, capture du portail Azure montrant le groupe de ressources.
 
 ### MLOPS — Observabilité et Évaluation (Chantier 3, Phase 1)
 

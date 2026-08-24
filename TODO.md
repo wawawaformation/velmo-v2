@@ -7,14 +7,13 @@
 
 ## 🔴 Brief points 5-9 (Priorité 1 — critères de performance/livrables)
 
-### Point 5 — Vérifier une conversation en ligne
-- [ ] `POST /messages` réel contre `velmo-basic` (pas juste `/users`/`/openapi.json`)
-  - Vérifier tool-calling (ex. statut de commande, stock)
-  - Vérifier qu'aucun secret/config n'apparaît dans la réponse
+### Point 5 — Vérifier une conversation en ligne ✅
+- [x] `POST /messages` réel contre `velmo-basic` — tool-calling + garde-fous actifs
+- [x] Comportement correct sur un numéro de commande inventé (`owned_order()`)
 
-### Point 6 — R2 (persistance) / R3 (isolation) en ligne
-- [ ] Envoyer un fait en session 1 (`user_id` A), vérifier qu'il est retrouvé en session 2
-- [ ] Vérifier qu'un `user_id` B n'a **aucun accès** aux faits de A
+### Point 6 — R2 (persistance) / R3 (isolation) en ligne ✅
+- [x] Fait donné à `C-marc-dubois` (pointure 42), retrouvé dans une requête indépendante suivante
+- [x] `C-emma-roux` interrogée sur la même info : aucun accès (isolation confirmée)
 
 ### Point 7 — Garde-fous et secrets en prod
 - [ ] Rejouer un message à bloquer (haine/violence), une injection de prompt, un cas PII en sortie
