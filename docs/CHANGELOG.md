@@ -117,6 +117,20 @@ sur la session de test manuel, aucun secret exposé. Coût non mesurable via
 renvoie `None` pour toutes les ressources) — noté comme limite, capture
 manuelle de la vue "Analyse des coûts" du portail recommandée à la place.
 
+**Domaine personnalisé** : `velmo.koabana.fr` (DNS géré chez Infomaniak)
+pointé vers `velmo-basic` — CNAME `velmo` → `velmo-basic-f6fqc9d2arg9a8ea
+.francecentral-01.azurewebsites.net` + TXT `asuid.velmo` (`customDomain
+VerificationId`, requis par Azure pour prouver la propriété du domaine en
+plus du CNAME). Certificat HTTPS gratuit (App Service Managed Certificate)
+créé et lié en SNI SSL (`az webapp config ssl create` puis `ssl bind`) —
+expiration 2027-02-24, renouvellement automatique par Azure. Vérifié :
+`https://velmo.koabana.fr/openapi.json` répond correctement. Bug rencontré :
+`az webapp config ssl create` (commande en preview) affiche une erreur de
+désérialisation trompeuse (`JSONDecodeError`) et met plusieurs minutes à
+rendre la main sans rien afficher — la création réussit malgré cette
+apparence d'échec, à vérifier avec `az webapp config ssl list` plutôt que
+de se fier au message affiché.
+
 **Point 9 du brief (documentation)** : runbook rédigé
 (`docs/runbook_deploiement_azure.md`) — ressources du groupe, procédure de
 déploiement/redéploiement, gestion des secrets, seed des bases, checklist

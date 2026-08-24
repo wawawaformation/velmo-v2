@@ -110,7 +110,42 @@ az role assignment create --assignee <principalId> --role "Key Vault Secrets Use
 Les paramètres non sensibles (endpoints, noms de modèles, `CHROMA_URL`)
 sont en App Settings classiques, pas dans Key Vault.
 
-## 3. Peupler les bases (après un reset ou un premier déploiement)
+## 3. Domaine personnalisé
+
+`velmo-basic` est joignable via **`https://velmo.koabana.fr`** (DNS géré
+chez Infomaniak), en plus de l'URL Azure par défaut
+(`velmo-basic-f6fqc9d2arg9a8ea.francecentral-01.azurewebsites.net`).
+
+**Configuration DNS** (côté Infomaniak, pas Azure) :
+
+| Type | Nom | Valeur |
+|---|---|---|
+| CNAME | `velmo` | `velmo-basic-f6fqc9d2arg9a8ea.francecentral-01.azurewebsites.net` |
+| TXT | `asuid.velmo` | `<customDomainVerificationId de velmo-basic>` |
+
+Le TXT est indispensable — Azure refuse le CNAME seul sans preuve de
+propriété du domaine.
+
+**Rattachement côté Azure** (une fois le DNS propagé) :
+
+```bash
+az webapp config hostname add --webapp-name velmo-basic --resource-group dlegrandRG --hostname velmo.koabana.fr
+az webapp config ssl create --resource-group dlegrandRG --name velmo-basic --hostname velmo.koabana.fr
+az webapp config ssl bind --resource-group dlegrandRG --name velmo-basic --certificate-thumbprint <thumbprint renvoyé par la commande précédente> --ssl-type SNI
+```
+
+**Piège connu** : `az webapp config ssl create` (commande en preview) peut
+afficher un `JSONDecodeError`/traceback de désérialisation trompeur et
+mettre plusieurs minutes à rendre la main sans rien afficher. La création
+réussit généralement malgré cette apparence d'échec — vérifier l'état réel
+avec `az webapp config ssl list` plutôt que de se fier au message affiché
+ou de relancer la commande en boucle.
+
+Certificat géré par Azure (App Service Managed Certificate, gratuit,
+renouvellement automatique) — aucune action manuelle de renouvellement à
+prévoir.
+
+## 4. Peupler les bases (après un reset ou un premier déploiement)
 
 Depuis **Cloud Shell** uniquement (ce sandbox/poste local n'a pas d'accès
 réseau direct à `velmo-pg`/`velmo-chroma`) :
@@ -137,7 +172,7 @@ az postgres flexible-server firewall-rule create --resource-group dlegrandRG --n
   --rule-name AllowAzureServices --start-ip-address 0.0.0.0 --end-ip-address 0.0.0.0
 ```
 
-## 4. Vérifications post-déploiement (à rejouer à chaque mise en prod)
+## 5. Vérifications post-déploiement (à rejouer à chaque mise en prod)
 
 ```bash
 # Connectivité de base
@@ -158,7 +193,7 @@ curl -s -X POST https://velmo-basic-f6fqc9d2arg9a8ea.francecentral-01.azurewebsi
 Réponse attendue sur le dernier appel : `guardrail_category` non nul (ex.
 `"prompt_injection"`), jamais de fuite de secret dans `reply`.
 
-## 5. Incidents connus et diagnostics
+## 6. Incidents connus et diagnostics
 
 | Symptôme | Cause | Fix |
 |---|---|---|
@@ -168,8 +203,9 @@ Réponse attendue sur le dernier appel : `guardrail_category` non nul (ex.
 | `ResourceNotFound` sur une commande `az` | Mauvais abonnement actif dans Cloud Shell | `az account set --subscription 207a438e-5d2d-4a7b-8306-af1f24c8d5dd` |
 | Erreur de résolution Key Vault dans le portail | Identité managée pas encore propagée (1-2 min) ou rôle non attribué | Attendre, vérifier `az role assignment list --scope <id du coffre>` |
 | `scripts/seed_kb.py` échoue en HTTPS | Ancien code sans support SSL (corrigé, cf. CHANGELOG) | Vérifier que la version déployée du script inclut le parsing `CHROMA_URL` |
+| `az webapp config ssl create` affiche un `JSONDecodeError` et ne rend pas la main | Bug de la commande (marquée "in preview") sur une réponse intermédiaire non-JSON | Ignorer le traceback, vérifier le résultat réel avec `az webapp config ssl list` (la création réussit généralement quand même) |
 
-## 6. Points de contrôle du brief (référence)
+## 7. Points de contrôle du brief (référence)
 
 | Point | Statut | Détail |
 |---|---|---|
