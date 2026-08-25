@@ -1,10 +1,18 @@
 # Livrables — Déploiement Velmo 2.0
 
+## Documentation de conception (Brief 2)
+
+| Document | Contenu |
+|---|---|
+| **reponses-deploiement.md** | Réponses aux points 1-3 du brief (sélection services, secrets, schéma) |
+| **velmo2-deploiement-azure.drawio** | Schéma cible d'architecture (navigateur → App Service → Azure OpenAI) |
+| **signaux-suivi.md** | Signaux de monitoring en production (latence, coût, taux blocage) |
+
 ## Documentation opérationnelle
 
 | Document | Contenu |
 |---|---|
-| **runbook_deploiement_azure.md** | Guide complet de déploiement et exploitation sur Azure |
+| **runbook_deploiement_azure.md** | Guide complet de déploiement et exploitation sur Azure (étapes GUI) |
 
 ## Ressources Azure (groupe `dlegrandRG`, France Central)
 
