@@ -7,6 +7,26 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Deploy: Frontend + API production (2026-08-25)
+
+**Static Web App + App Service now live** — velmo-client.koabana.fr and velmo.koabana.fr operational.
+
+**Challenges solved**:
+1. **Frontend env vars** — Created `.env.production` and `.env.development` so Vite injects correct `VITE_API_TARGET` at build time (prod: https://velmo.koabana.fr, dev: http://localhost:8000)
+2. **CORS blockage** — Frontend on `velmo-client.koabana.fr` couldn't reach API on `velmo.koabana.fr` due to missing CORS headers
+   - Attempted: `fastapi.middleware.cors.CORSMiddleware` — caused container startup crash (unknown dependency or config issue)
+   - Solution: Custom `BaseHTTPMiddleware` that adds `Access-Control-Allow-Origin` header + OPTIONS preflight handler — lightweight, no external deps, stable
+3. **Static Web App routing** — Configured `staticwebapp.config.json` to serve `/assets/*` directly (avoid SPA fallback serving HTML instead of JS)
+
+**Files modified**:
+- `frontend/src/App.vue` — use `import.meta.env.VITE_API_TARGET` to construct API base URL
+- `frontend/.env.production` — set `VITE_API_TARGET=https://velmo.koabana.fr`
+- `frontend/.env.development` — set `VITE_API_TARGET=http://localhost:8000`
+- `src/velmo/api.py` — add custom CORS middleware with preflight OPTIONS handler
+- `staticwebapp.config.json` — route `/assets/*` explicitly before SPA fallback
+
+**Verification** : Button "Envoyer" now successfully submits messages via cross-origin fetch.
+
 ### Incident — Langfuse integration causes timeout on deployed agent (2026-08-24)
 
 **Commit `a52230c`** ("Feat: minimal Langfuse tracing on Agent.respond()") was built and deployed successfully on Azure, but caused immediate operational failure:
