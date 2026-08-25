@@ -13,6 +13,10 @@
 
 ## Vérifications rapides
 
+### 0. Voir le code
+
+https://github.com/wawawaformation/velmo-v2/tree/dev
+
 ### 1. API opérationnelle
 
 ```bash
