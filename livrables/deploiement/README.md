@@ -1,18 +1,31 @@
 # Livrables — Déploiement Velmo 2.0
 
-## Documentation de conception (Brief 2)
+## Pièces fournies pour le Brief 2
 
-| Document | Contenu |
+### 1. Conception (points 1-3)
+
+| Fichier | Contenu | Correspond à |
+|---|---|---|
+| **reponses-deploiement.md** | Services Azure justifiés, liste secrets, plan mémoire | Brief 1-3 |
+| **velmo2-deploiement-azure.drawio** | Schéma cible : utilisateur → App Service → LLM → mémoire | Brief point 3 |
+
+### 2. Monitoring (point 8)
+
+| Fichier | Contenu |
 |---|---|
-| **reponses-deploiement.md** | Réponses aux points 1-3 du brief (sélection services, secrets, schéma) |
-| **velmo2-deploiement-azure.drawio** | Schéma cible d'architecture (navigateur → App Service → Azure OpenAI) |
-| **signaux-suivi.md** | Signaux de monitoring en production (latence, coût, taux blocage) |
+| **signaux-suivi.md** | Latence, coût, taux blocage garde-fous |
 
-## Documentation opérationnelle
+### 3. Exploitation (point 9 — runbook)
 
-| Document | Contenu |
+| Fichier | Contenu |
 |---|---|
-| **runbook_deploiement_azure.md** | Guide complet de déploiement et exploitation sur Azure (étapes GUI) |
+| **runbook_deploiement_azure.md** | Déployer, configurer secrets, domaine, vérifier, dépanner (étapes GUI) |
+
+### 4. Preuves d'infrastructure (point 4 — capture portail)
+
+| Fichier | Contenu |
+|---|---|
+| **azure_deploiement.png** | Capture portail Azure : groupe `dlegrandRG` avec toutes ressources |
 
 ## Ressources Azure (groupe `dlegrandRG`, France Central)
 
@@ -59,4 +72,23 @@ Voir section 6 du runbook (`runbook_deploiement_azure.md`).
 
 ---
 
-**Dernière mise à jour** : 2026-08-25
+## URLs publiques
+
+- **API Agent** : https://velmo.koabana.fr/users
+- **Frontend** : https://velmo-client.koabana.fr (bouton "Envoyer" fonctionnel)
+- **Dépôt GitHub** : https://github.com/wawawaformation/velmo-v2 (branche `dev`)
+
+---
+
+## Critères de performance validés
+
+✅ Agent accessible publiquement via URL Azure  
+✅ Mémoire long terme persistante d'une session à l'autre (**R2**)  
+✅ Isolation stricte par utilisateur (**R3**)  
+✅ Garde-fous validés en production (7 catégories, traçabilité)  
+✅ Aucun secret dans le code source (tous externalisés Key Vault)  
+✅ Ressources regroupées groupe `dlegrandRG` (facile à retrouver/supprimer)  
+
+---
+
+**Livrable complet** : 2026-08-25
