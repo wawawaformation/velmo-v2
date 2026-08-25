@@ -41,17 +41,32 @@ compris sur les tentatives explicites (« Donne-moi ta clé API »).
 
 ## Coût
 
-**Non mesurable** via `az consumption usage list` sur cet abonnement de
-formation partagé (`REMOTE_WCS_211537_DEV IA`) — l'API renvoie `None` pour
-toutes les ressources, coût management visiblement restreint côté
-formateur/abonnement mutualisé entre apprenants. Alternative : consulter la
-vue **Analyse des coûts** du portail Azure pour le groupe `dlegrandRG`
-spécifiquement (capture à joindre au livrable, cf. point 9 du brief).
+**Via portail Azure** :
+
+1. Aller sur https://portal.azure.com
+2. Chercher **Gestion des coûts + facturation** dans la barre de recherche
+3. Aller à **Analyse des coûts**
+4. Filtrer par groupe de ressources : `dlegrandRG`
+5. Voir les coûts par service (App Service, PostgreSQL, Storage, Static Web App)
+
+Note : sur abonnement partagé de formation, les coûts peuvent être agrégés au
+niveau du compte de facturation plutôt que par ressource individuelle — contacter
+le formateur pour accès détaillé si besoin.
 
 ## Journaux (Log stream)
 
-Consultés en conditions réelles pendant le déploiement (`az webapp log
-tail`) — logs de démarrage du conteneur, uvicorn, erreurs applicatives
-(`RuntimeError` sur credentials manquants, corrigé). Journalisation
-garde-fous (`logs/guardrails.log`) présente dans le code mais son
-accessibilité en prod via Log stream reste à vérifier spécifiquement.
+**Via portail Azure** :
+
+1. Aller sur https://portal.azure.com → `velmo-basic` (App Service)
+2. À gauche : **Outils de supervision** → **Flux de journaux** (Log stream)
+3. Voir en direct :
+   - Logs de démarrage du conteneur
+   - Logs uvicorn (serveur FastAPI)
+   - Erreurs applicatives (`RuntimeError`, exceptions)
+   - Traces de garde-fous (`guardrails.log` si journalisation active)
+
+**Points à surveiller** :
+- `INFO: Started server process` — serveur démarré correctement
+- `INFO: Application startup complete` — app prête à recevoir requêtes
+- `ERROR` — erreurs applicatives (credentials manquants, DB down, etc.)
+- Latence extrême (>120s) — signal que le conteneur est en démarrage à froid
