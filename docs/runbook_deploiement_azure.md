@@ -211,6 +211,39 @@ Certificat géré par Azure (App Service Managed Certificate, gratuit,
 renouvellement automatique) — aucune action manuelle de renouvellement à
 prévoir.
 
+## 3bis. Frontend (Static Web App)
+
+Le frontend Vue.js est déployé sur **Azure Static Web Apps** à `https://velmo-client.koabana.fr`.
+
+### Redéployer le frontend
+
+Automatique via `.github/workflows/azure-static-web-apps-*.yml` à chaque push sur `dev`/`main`.
+
+**Si un redéploiement manuel est nécessaire** (rare) :
+
+**Via portail Azure Web** :
+
+1. Aller sur https://portal.azure.com → chercher `velmo-client` (Static Web App)
+2. À gauche : **Workflows** (GitHub Actions workflow intégré)
+3. Voir l'historique des déploiements
+4. Pour forcer un redéploiement : faire un nouveau `git push` sur `dev`
+
+### Vérifier le frontend
+
+1. Ouvrir https://velmo-client.koabana.fr
+2. Vérifier que le bouton "Envoyer" est visible et cliquable
+3. Tester : entrer un message, cliquer, vérifier que la réponse s'affiche
+
+**Diagnostics en cas d'erreur** :
+
+- **Erreur CORS** : frontend ne peut pas appeler l'API
+  - Vérifier que l'API `velmo.koabana.fr` a le middleware CORS configuré
+  - Vérifier dans la console du navigateur (F12 → Console) l'erreur CORS exacte
+  
+- **API timeout ou erreur 500** : revoir la section §1 (redéploiement de l'agent)
+
+- **Ancien code affiché** : forcer un hard refresh (Ctrl+Shift+R ou Cmd+Shift+R)
+
 ## 4. Peupler les bases (après un reset ou un premier déploiement)
 
 Depuis **Cloud Shell** uniquement (ce sandbox/poste local n'a pas d'accès
