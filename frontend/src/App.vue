@@ -33,7 +33,8 @@ const selectedUserName = computed(() => {
 })
 
 async function loadUsers() {
-  const response = await fetch('/api/users')
+  const apiBase = import.meta.env.VITE_API_TARGET || '/api'
+  const response = await fetch(`${apiBase}/users`)
   users.value = await response.json()
   if (users.value.length > 0) {
     selectedUserId.value = users.value[0].id
@@ -50,7 +51,8 @@ async function submitMessage() {
   guardrailCategory.value = null
 
   try {
-    const response = await fetch('/api/messages', {
+    const apiBase = import.meta.env.VITE_API_TARGET || '/api'
+    const response = await fetch(`${apiBase}/messages`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ user_id: selectedUserId.value, message: message.value }),
