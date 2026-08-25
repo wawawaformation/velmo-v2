@@ -10,7 +10,7 @@ export default defineConfig({
       // FastAPI (make api / docker compose up api) — évite tout souci CORS
       // en dev, aucune URL en dur dans le code JS.
       '/api': {
-        target: 'http://localhost:8000',
+        target: process.env.VITE_API_TARGET || 'http://localhost:8000',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
       },
