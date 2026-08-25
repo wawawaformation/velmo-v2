@@ -120,3 +120,4 @@ def get_users(session=Depends(get_session)) -> list[UserResponse]:
         )
         for c in customers
     ]
+
