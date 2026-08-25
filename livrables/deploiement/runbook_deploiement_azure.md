@@ -273,23 +273,14 @@ az postgres flexible-server firewall-rule create --resource-group dlegrandRG --n
 
 ## 5. Vérifications post-déploiement (à rejouer à chaque mise en prod)
 
-### Option 1 : Via Bruno (interface graphique, recommandé)
-
-**Utiliser la collection Bruno** `bruno/velmo-demo-cto/` pré-construite :
-- Collection de 7 requêtes de test
-- Environnement configuré : `baseUrl = https://velmo.koabana.fr`
-- Tests : connectivité, conversation, mémoire, garde-fous
-
-Voir `docs/script_presentation_cto.md` pour la procédure complète.
-
-### Option 2 : Via navigateur Web (pour les GET)
+### Option 1 : Via navigateur Web (pour les GET)
 
 1. Ouvrir https://velmo.koabana.fr/openapi.json
    - Doit afficher le schéma OpenAPI (JSON)
 2. Ouvrir https://velmo.koabana.fr/users
    - Doit afficher la liste des clients (JSON)
 
-### Option 3 : Via curl (pour les POST)
+### Option 2 : Via curl (pour les POST)
 
 Tester localement :
 

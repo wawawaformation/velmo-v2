@@ -36,11 +36,6 @@ https://velmo-client.koabana.fr
 - Appel API cross-origin ✅ CORS fonctionnel
 - Réponse affichée ✅ end-to-end
 
-### 3. Collection Bruno (test complet)
-
-`bruno/velmo-demo-cto/` — 7 requêtes pré-construites
-- Connectivité, conversation, mémoire, garde-fous
-
 ---
 
 ## Livrables fournis
